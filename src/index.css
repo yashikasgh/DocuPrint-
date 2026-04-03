@@ -1,0 +1,150 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  :root {
+    --background: 45 33% 96%;
+    --foreground: 0 0% 7%;
+
+    --card: 45 33% 96%;
+    --card-foreground: 0 0% 7%;
+
+    --popover: 45 33% 96%;
+    --popover-foreground: 0 0% 7%;
+
+    --primary: 265 85% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 25 95% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 45 20% 90%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 165 70% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 0%;
+    --input: 0 0% 0%;
+    --ring: 265 85% 55%;
+
+    --radius: 0px;
+
+    --brutal-shadow: 6px 6px 0px hsl(0 0% 0%);
+    --brutal-shadow-sm: 4px 4px 0px hsl(0 0% 0%);
+    --brutal-shadow-hover: 8px 8px 0px hsl(0 0% 0%);
+
+    --sidebar-background: 45 33% 96%;
+    --sidebar-foreground: 0 0% 7%;
+    --sidebar-primary: 265 85% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 25 95% 55%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 0%;
+    --sidebar-ring: 265 85% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    background-image: 
+      linear-gradient(hsl(0 0% 0% / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(0 0% 0% / 0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+    min-width: 320px;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .brutal-border {
+    @apply border-2 border-foreground;
+  }
+
+  .brutal-shadow {
+    box-shadow: var(--brutal-shadow);
+  }
+
+  .brutal-shadow-sm {
+    box-shadow: var(--brutal-shadow-sm);
+  }
+
+  .brutal-card {
+    @apply brutal-border bg-card p-6 transition-all duration-150;
+    box-shadow: var(--brutal-shadow);
+  }
+
+  .brutal-card:hover {
+    box-shadow: var(--brutal-shadow-hover);
+    transform: translate(-2px, -2px);
+  }
+
+  .brutal-input {
+    @apply brutal-border bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-full;
+    box-shadow: var(--brutal-shadow-sm);
+  }
+
+  .brutal-btn {
+    @apply brutal-border px-6 py-3 font-bold uppercase tracking-wider text-sm transition-all duration-100 cursor-pointer;
+    box-shadow: var(--brutal-shadow-sm);
+  }
+
+  .brutal-btn:hover {
+    box-shadow: var(--brutal-shadow);
+    transform: translate(-2px, -2px);
+  }
+
+  .brutal-btn:active {
+    box-shadow: none;
+    transform: translate(4px, 4px);
+  }
+
+  .brutal-btn-primary {
+    @apply brutal-btn bg-primary text-primary-foreground;
+  }
+
+  .brutal-btn-secondary {
+    @apply brutal-btn bg-secondary text-secondary-foreground;
+  }
+
+  .brutal-btn-outline {
+    @apply brutal-btn bg-card text-foreground;
+  }
+}
+
+@media (hover: none) {
+  .brutal-card:hover,
+  .brutal-btn:hover {
+    box-shadow: var(--brutal-shadow);
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -15,18 +15,9 @@ export const config = {
   openaiApiKey: cleanString(process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_FLYERS || ""),
   groqApiKey: cleanString(process.env.GROQ_API_KEY || ""),
   groqModel: cleanString(process.env.GROQ_MODEL || "llama-3.3-70b-versatile"),
-  geminiApiKey: cleanString(
-    process.env.GEMINI_API_KEY ||
-    process.env.GOOGLE_API_KEY ||
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-    "",
-  pollinationsApiKey:
-    process.env.POLLINATIONS_API_KEY ||
-    process.env.POLLEN_API_KEY ||
-    "",
-  pollinationsModel:
-    process.env.POLLINATIONS_MODEL ||
-    "flux",
-  mistralApiKey: process.env.MISTRAL_API_KEY || "",
+  geminiApiKey: cleanString(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || ""),
+  pollinationsApiKey: cleanString(process.env.POLLINATIONS_API_KEY || process.env.POLLEN_API_KEY || ""),
+  pollinationsModel: cleanString(process.env.POLLINATIONS_MODEL || "flux"),
+  mistralApiKey: cleanString(process.env.MISTRAL_API_KEY || ""),
   appName: "DocuPrint",
 };

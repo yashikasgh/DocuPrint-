@@ -19,5 +19,6 @@ export const config = {
     process.env.GOOGLE_API_KEY ||
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
     "",
+  mistralApiKey: process.env.MISTRAL_API_KEY || "",
   appName: "DocuPrint",
 };

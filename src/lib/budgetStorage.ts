@@ -50,7 +50,76 @@ export const DEFAULT_BUDGET_CATEGORIES = [
 export const EXPENSE_TYPES = ["Food", "Lighting", "Logistics", "Decoration", "Hospitality", "Equipment", "Marketing", "Misc"];
 export const PAYMENT_METHODS = ["Cash", "Card", "Bank Transfer", "UPI", "Cheque", "Pending"];
 
-export const sampleBudgetRecords: StoredBudgetRecord[] = [
+const buildDetailedRecord = (record: StoredBudgetRecord): StoredBudgetRecord => {
+  if (record.items.length >= 6) {
+    return {
+      ...record,
+      subtotal: record.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
+      taxTotal: record.items.reduce((sum, item) => sum + item.tax, 0),
+      grandTotal: record.items.reduce((sum, item) => sum + item.amount, 0) - (record.discount || 0),
+    };
+  }
+
+  const generatedItems: BudgetProjectItem[] = [
+    {
+      id: `${record.id}-ops`,
+      label: `${record.category} operations support`,
+      quantity: 1,
+      unitPrice: Math.round((record.expectedBudget || 50000) * 0.09),
+      tax: Math.round((record.expectedBudget || 50000) * 0.0072),
+      amount: Math.round((record.expectedBudget || 50000) * 0.0972),
+      notes: "Coordination support, runner expenses, and execution desk materials.",
+      expenseType: "Logistics",
+      vendorName: `${record.vendor} Ops`,
+      purchaseDate: record.date,
+      paymentMethod: record.paymentMethod,
+      expenseId: `${record.receiptId}-OPS`,
+    },
+    {
+      id: `${record.id}-print`,
+      label: `${record.title} print and stationery`,
+      quantity: 1,
+      unitPrice: Math.round((record.expectedBudget || 50000) * 0.05),
+      tax: Math.round((record.expectedBudget || 50000) * 0.004),
+      amount: Math.round((record.expectedBudget || 50000) * 0.054),
+      notes: "Invites, certificates, ID cards, directional signage, and desk paperwork.",
+      expenseType: "Marketing",
+      vendorName: "Campus Print Studio",
+      purchaseDate: record.date,
+      paymentMethod: "Card",
+      expenseId: `${record.receiptId}-PRT`,
+    },
+    {
+      id: `${record.id}-misc`,
+      label: `${record.title} contingency reserve utilization`,
+      quantity: 1,
+      unitPrice: Math.round((record.expectedBudget || 50000) * 0.035),
+      tax: Math.round((record.expectedBudget || 50000) * 0.0028),
+      amount: Math.round((record.expectedBudget || 50000) * 0.0378),
+      notes: "Unexpected operational adjustments, last-mile procurement, and support costs.",
+      expenseType: "Misc",
+      vendorName: "Local Procurement Desk",
+      purchaseDate: record.date,
+      paymentMethod: "UPI",
+      expenseId: `${record.receiptId}-MSC`,
+    },
+  ];
+
+  const items = [...record.items, ...generatedItems];
+  const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const taxTotal = items.reduce((sum, item) => sum + item.tax, 0);
+  const grandTotal = items.reduce((sum, item) => sum + item.amount, 0) - (record.discount || 0);
+
+  return {
+    ...record,
+    items,
+    subtotal,
+    taxTotal,
+    grandTotal,
+  };
+};
+
+const baseSampleBudgetRecords: StoredBudgetRecord[] = [
   {
     id: "alegria-2024",
     title: "Allegria Fest 2024",
@@ -207,6 +276,8 @@ export const sampleBudgetRecords: StoredBudgetRecord[] = [
     grandTotal: 59670,
   },
 ];
+
+export const sampleBudgetRecords: StoredBudgetRecord[] = baseSampleBudgetRecords.map(buildDetailedRecord);
 
 const canUseStorage = () => typeof window !== "undefined" && !!window.localStorage;
 

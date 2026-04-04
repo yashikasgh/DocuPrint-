@@ -212,15 +212,32 @@ export const parseBudgetCsv = (buffer, originalname = "upload.csv") => {
   const workbook = XLSX.read(buffer, { type: "buffer" });
   const sheetName = workbook.SheetNames[0];
   const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
-  const previewRows = rows.slice(0, 25);
+  const previewRows = rows.slice(0, 40);
+  const extractedColumns = Array.from(
+    new Set(previewRows.flatMap((row) => Object.keys(row)))
+  );
+  const numericValues = previewRows.flatMap((row) =>
+    Object.values(row)
+      .map((value) => Number(String(value).replace(/[^0-9.-]/g, "")))
+      .filter((value) => Number.isFinite(value) && value !== 0)
+  );
+  const numericTotal = numericValues.reduce((sum, value) => sum + value, 0);
+  const numericAverage = numericValues.length > 0 ? numericTotal / numericValues.length : 0;
 
   return {
     fileName: originalname,
     rowsParsed: rows.length,
     rows: previewRows,
+    extractedColumns,
     summaryText: previewRows
       .map((row, index) => `${index + 1}. ${Object.entries(row).map(([key, value]) => `${key}: ${String(value)}`).join(", ")}`)
-      .join("\n"),
+      .join("\n")
+      .concat(
+        `\nColumns detected: ${extractedColumns.join(", ") || "None"}`,
+        `\nNumeric cells detected: ${numericValues.length}`,
+        `\nNumeric total across detected cells: ${formatCurrency(numericTotal)}`,
+        `\nAverage detected numeric value: ${formatCurrency(numericAverage)}`
+      ),
   };
 };
 

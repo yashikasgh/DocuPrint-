@@ -281,8 +281,114 @@ const drawBadge = (page, bold, label, x, topY, hexColor, size = 52) => {
   });
 };
 
-export const buildPdfDocument = async ({
+const drawHorizontalBarChart = ({
+  page,
+  font,
+  bold,
+  x,
+  y,
+  width,
+  height,
   title,
+  items = [],
+  accentHex = "#2563eb",
+  subtitle = "",
+  valueFormatter = (value) => String(value),
+}) => {
+  const chartItems = safeArray(items)
+    .map((item) => ({
+      label: String(item.label || ""),
+      value: Number(item.value || item.amount || 0),
+    }))
+    .filter((item) => item.label && Number.isFinite(item.value) && item.value >= 0)
+    .slice(0, 5);
+
+  if (chartItems.length === 0) {
+    return y;
+  }
+
+  const accent = hexToRgb(accentHex);
+  const boxY = y - height;
+  page.drawRectangle({
+    x,
+    y: boxY,
+    width,
+    height,
+    color: rgb(0.985, 0.987, 0.992),
+    borderColor: rgb(0.9, 0.92, 0.95),
+    borderWidth: 1,
+  });
+
+  page.drawText(sanitizeText(title), {
+    x: x + 12,
+    y: y - 18,
+    size: 11.5,
+    font: bold,
+    color: rgb(0.1, 0.1, 0.12),
+  });
+
+  if (subtitle) {
+    page.drawText(sanitizeText(subtitle), {
+      x: x + 12,
+      y: y - 31,
+      size: 8.2,
+      font,
+      color: rgb(0.45, 0.45, 0.48),
+    });
+  }
+
+  const chartTop = y - 44;
+  const maxValue = Math.max(...chartItems.map((item) => item.value), 1);
+  const labelWidth = 92;
+  const valueWidth = 64;
+  const barMaxWidth = width - labelWidth - valueWidth - 34;
+  const rowHeight = Math.max((height - 56) / chartItems.length, 18);
+
+  chartItems.forEach((item, index) => {
+    const rowTop = chartTop - index * rowHeight;
+    const label = truncateToWidth(item.label, font, 8.4, labelWidth - 8);
+    const formattedValue = truncateToWidth(valueFormatter(item.value), font, 8.4, valueWidth - 4);
+    const barX = x + 12 + labelWidth;
+    const barY = rowTop - 11;
+    const barWidth = maxValue > 0 ? Math.max((item.value / maxValue) * barMaxWidth, 3) : 0;
+
+    page.drawText(label, {
+      x: x + 12,
+      y: rowTop - 8,
+      size: 8.4,
+      font,
+      color: rgb(0.16, 0.16, 0.18),
+    });
+
+    page.drawRectangle({
+      x: barX,
+      y: barY,
+      width: barMaxWidth,
+      height: 8,
+      color: rgb(0.92, 0.94, 0.97),
+    });
+
+    page.drawRectangle({
+      x: barX,
+      y: barY,
+      width: barWidth,
+      height: 8,
+      color: rgb(accent.r, accent.g, accent.b),
+    });
+
+    page.drawText(formattedValue, {
+      x: x + width - 12 - font.widthOfTextAtSize(formattedValue, 8.4),
+      y: rowTop - 8,
+      size: 8.4,
+      font: bold,
+      color: rgb(0.14, 0.14, 0.16),
+    });
+  });
+
+  return boxY - 14;
+};
+
+export const buildPdfDocument = async ({
   collegeName,
   collegeAddress,
   documentLabel,
@@ -1042,6 +1148,33 @@ export const buildBudgetSheetPdf = async ({
 
   await drawHeader();
 
+  const portfolioChartItems = safeArray(records)
+    .map((record) => ({
+      label: record.title || record.category || "Budget record",
+      amount: Number(record.grandTotal || 0),
+    }))
+    .filter((record) => record.amount > 0)
+    .sort((first, second) => second.amount - first.amount)
+    .slice(0, 5);
+
+  if (portfolioChartItems.length > 0) {
+    await ensureSpace(150);
+    y = drawHorizontalBarChart({
+      page,
+      font,
+      bold,
+      x: LANDSCAPE_PAGE.margin,
+      y,
+      width: LANDSCAPE_PAGE.width - LANDSCAPE_PAGE.margin * 2,
+      height: 128,
+      title: "Budget Snapshot",
+      subtitle: "Top expenditure records by total spend",
+      items: portfolioChartItems,
+      accentHex: collegeBrandColor || "#2563eb",
+      valueFormatter: formatCurrency,
+    });
+  }
+
   for (const record of records) {
     await ensureSpace(94);
     page.drawRectangle({
@@ -1251,7 +1384,25 @@ export const buildBudgetEstimatePdf = async ({
     });
     y -= 14;
   });
-  y -= 12;
+  y -= 10;
+
+  y = drawHorizontalBarChart({
+    page,
+    font,
+    bold,
+    x: PAGE.margin,
+    y,
+    width: PAGE.width - PAGE.margin * 2,
+    height: 112,
+    title: "Estimated Allocation Mix",
+    subtitle: "Projected spend by major budget head",
+    items: breakdown.map((item) => ({
+      label: item.label,
+      amount: Number(item.amount || 0),
+    })),
+    accentHex: collegeBrandColor || "#2563eb",
+    valueFormatter: formatCurrency,
+  });
 
   page.drawText("Suggested Breakdown", {
     x: PAGE.margin,

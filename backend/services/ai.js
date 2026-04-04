@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { config } from "../config.js";
-import { clampText } from "../utils.js";
+import { clampText, safeArray } from "../utils.js";
 
 const GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -158,9 +158,7 @@ const fallbackProposalParagraphs = (payload) => [
 ];
 
 const createReportPrompt = (payload) => {
-  const numericAtt = payload.participantsAppeared ? String(payload.participantsAppeared) : "not available";
   const budgetApproved = payload.eventFee || payload.workshopFee ? `Rs. ${Number(payload.eventFee || payload.workshopFee).toLocaleString("en-IN")}` : "not provided";
-  const feedback = payload.feedback ? `${payload.feedback}/10` : "not available";
 
   return `You are a professional event report automation engine for Pillai College of Engineering committee event documentation. Generate a comprehensive event report that spans at least 2-3 pages when formatted. Focus on creating an engaging, modern event report style rather than a traditional formal document.
 
@@ -602,6 +600,68 @@ const generateTextWithLlm = async (prompt) => {
   return null;
 };
 
+const normalizeInsightLine = (value) =>
+  String(value || "")
+    .replace(/^[\s\-*•\d.)]+/, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\*+/g, "");
+
+const normalizeSentence = (value) => {
+  const cleaned = normalizeInsightLine(value);
+  if (!cleaned) {
+    return "";
+  }
+
+  return /[.!?]$/.test(cleaned) ? cleaned : `${cleaned}.`;
+};
+
+const extractJsonPayload = (text = "") => {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+};
+
+const normalizeBudgetInsights = (insights, fallback = []) => {
+  const cleaned = safeArray(insights)
+    .map((item) => normalizeSentence(item))
+    .filter(Boolean)
+    .slice(0, 4);
+
+  if (cleaned.length === 4) {
+    return cleaned;
+  }
+
+  return safeArray(fallback)
+    .map((item) => normalizeSentence(item))
+    .filter(Boolean)
+    .slice(0, 4);
+};
+
+const normalizeBudgetRecommendations = (recommendations, fallback = []) => {
+  const cleaned = safeArray(recommendations)
+    .map((item) => normalizeSentence(item))
+    .filter(Boolean)
+    .slice(0, 3);
+
+  if (cleaned.length > 0) {
+    return cleaned;
+  }
+
+  return safeArray(fallback)
+    .map((item) => normalizeSentence(item))
+    .filter(Boolean)
+    .slice(0, 3);
+};
+
 export const generateBudgetAnalysisNarrative = async (payload) => {
   const items = Array.isArray(payload.items) ? payload.items : [];
   const expectedBudget = Number(payload.expectedBudget || 0);
@@ -629,22 +689,47 @@ export const generateBudgetAnalysisNarrative = async (payload) => {
       : variance < 0
         ? `The folder is under budget by ${formatInr(Math.abs(variance))}, which leaves room for pending operational costs.`
         : "The folder is exactly on the approved budget.";
+  const fallbackInsights = [
+    overspendText,
+    largestExpense
+      ? `${largestExpense.label} is the cost driver in this folder, contributing ${formatInr(largestExpense.amount)} to the spend profile.`
+      : "This folder does not have enough expense entries yet to identify a dominant cost driver.",
+    topExpenseTypeEntry
+      ? `${topExpenseTypeEntry[0]} is the highest spending expense type at ${formatInr(topExpenseTypeEntry[1])}, so this is the first area to audit for savings or reallocation.`
+      : "Expense-type tagging is still limited, so category-wise spend insights will improve as more entries are added.",
+    topVendorEntry
+      ? `${topVendorEntry[0]} is the most expensive vendor touchpoint so far, which makes it the best candidate for rate comparison or negotiation.`
+      : "Vendor-level comparison is not available yet because the expense entries do not have enough vendor detail.",
+  ];
+  const fallbackRecommendation =
+    variance > 0
+      ? `Freeze non-essential additions in ${payload.title || "this folder"} until ${topExpenseTypeEntry?.[0] || "the main spend category"} is reviewed and the overspend of ${formatInr(variance)} is justified or reduced.`
+      : `Continue tracking ${payload.title || "this folder"} with the current structure, and use the remaining ${formatInr(Math.abs(Math.min(variance, 0)))} strategically for pending items or contingency coverage.`;
   const prompt = `
-You are an analyst for a college budget management system.
+You are a finance analyst for a college event budget management system.
 
-Analyze the following budget folder data and return:
-1. A short executive summary paragraph.
-2. 4 concise actionable insights.
-3. A final recommendation paragraph.
+Analyze the following event budget and return:
+1. One meaningful executive summary paragraph that explains the budget position clearly.
+2. Exactly 4 specific actionable insights tied to the numbers, vendors, categories, or uploaded CSV data.
+3. Exactly 2 recommendation lines for the committee.
 
-Keep it professional and useful for faculty or student committee review.
-Do not use markdown.
+Requirements:
+- Keep it professional, specific, and useful for faculty or student committee review.
+- Refer to concrete spend patterns, not generic budgeting advice.
+- If CSV data is provided, incorporate it into the analysis.
+- Make each insight distinct and practical.
+- Do not use markdown.
+- Do not mention that you are an AI model.
+- Keep every insight and recommendation to one sentence.
+- Return valid JSON only in this exact shape:
+{"summary":"...","insights":["...","...","...","..."],"recommendations":["...","..."]}
 
 Folder title: ${payload.title || "Untitled folder"}
 Category: ${payload.category || "General"}
 Expected budget: ${payload.expectedBudget || 0}
 Actual spend: ${payload.grandTotal || 0}
 Budget variance: ${variance}
+Average expense value: ${items.length > 0 ? (actualSpend / items.length).toFixed(2) : 0}
 Vendor: ${payload.vendor || "Unknown"}
 Description: ${clampText(payload.description || "", 800)}
 Expenses:
@@ -667,55 +752,72 @@ ${clampText(payload.csvSummary || "No CSV uploaded.", 2000)}
     return {
       source: "template",
       summary: summaryParts.join(" "),
-      insights: [
-        overspendText,
-        largestExpense
-          ? `${largestExpense.label} is the cost driver in this folder, contributing ${formatInr(largestExpense.amount)} to the spend profile.`
-          : "This folder does not have enough expense entries yet to identify a dominant cost driver.",
-        topExpenseTypeEntry
-          ? `${topExpenseTypeEntry[0]} is the highest spending expense type at ${formatInr(topExpenseTypeEntry[1])}, so this is the first area to audit for savings or reallocation.`
-          : "Expense-type tagging is still limited, so category-wise spend insights will improve as more entries are added.",
-        topVendorEntry
-          ? `${topVendorEntry[0]} is the most expensive vendor touchpoint so far, which makes it the best candidate for rate comparison or negotiation.`
-          : "Vendor-level comparison is not available yet because the expense entries do not have enough vendor detail.",
-      ],
-      recommendation:
-        variance > 0
-          ? `Freeze non-essential additions in ${payload.title || "this folder"} until ${topExpenseTypeEntry?.[0] || "the main spend category"} is reviewed and the overspend of ${formatInr(variance)} is justified or reduced.`
-          : `Continue tracking ${payload.title || "this folder"} with the current structure, and use the remaining ${formatInr(Math.abs(Math.min(variance, 0)))} strategically for pending items or contingency coverage.`,
+      insights: normalizeBudgetInsights(fallbackInsights),
+      recommendation: normalizeBudgetRecommendations([fallbackRecommendation]).join(" "),
     };
   }
 
+  const parsed = extractJsonPayload(llmResponse.text);
+  if (parsed) {
+    const summary = normalizeSentence(parsed.summary || "");
+    const insights = normalizeBudgetInsights(parsed.insights, fallbackInsights);
+    const recommendations = normalizeBudgetRecommendations(parsed.recommendations, [fallbackRecommendation]);
+
+    if (summary && insights.length === 4 && recommendations.length > 0) {
+      return {
+        source: llmResponse.source,
+        summary,
+        insights,
+        recommendation: recommendations.join(" "),
+      };
+    }
+  }
+
   const text = llmResponse.text;
-  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
+  const lines = text.split("\n").map((line) => normalizeSentence(line)).filter(Boolean);
   return {
     source: llmResponse.source,
-    summary: lines[0] || text,
-    insights: lines.slice(1, 5),
-    recommendation: lines.slice(5).join(" ") || lines[lines.length - 1] || text,
+    summary: lines[0] || normalizeSentence(text) || normalizeSentence(fallbackInsights[0]),
+    insights: normalizeBudgetInsights(lines.slice(1, 5), fallbackInsights),
+    recommendation: normalizeBudgetRecommendations(lines.slice(5), [fallbackRecommendation]).join(" "),
   };
 };
 
 export const generateBudgetEstimateNarrative = async (payload) => {
   const eventProfile = resolveEventProfile(payload.eventType);
+  const historyDetails = (payload.history || [])
+    .map((record, index) => {
+      const topItems = safeArray(record.items)
+        .slice(0, 8)
+        .map((item) => `${item.label}: ${item.amount} (${item.expenseType || "General"})`)
+        .join("; ");
+
+      return `${index + 1}. ${record.title} | category ${record.category} | expected ${record.expectedBudget || 0} | spent ${record.grandTotal || 0} | vendor ${record.vendor || "Unknown"} | description ${record.description || "None"} | items ${topItems}`;
+    })
+    .join("\n");
+
   const prompt = `
-You are estimating a new college event budget using past event spending history.
+You are estimating a new college event budget using detailed past event spending history.
 
 Event type: ${payload.eventType}
 Expected attendees: ${payload.attendees}
 
 Historical folders:
-${(payload.history || [])
-  .map((record, index) => `${index + 1}. ${record.title} | category ${record.category} | expected ${record.expectedBudget || 0} | spent ${record.grandTotal || 0}`)
-  .join("\n")}
+${historyDetails}
 
 Return:
-1. One short summary paragraph.
-2. A suggested total estimate as a plain number.
-3. Four short breakdown items for Lighting, Food, Logistics, Misc.
-4. Two practical recommendations that are specific to the event type.
+1. One meaningful summary paragraph explaining the estimate logic.
+2. A suggested total estimate as a whole number.
+3. Four practical breakdown items for Lighting, Food, Logistics, Misc based on the event type and past history.
+4. Two practical recommendations specific to the event type and likely cost drivers.
 
-Keep it plain text.
+Requirements:
+- Use the past budgets as actual historical evidence.
+- Do not give generic advice.
+- Mention the strongest historical cost patterns influencing the estimate.
+- Keep the summary concise but meaningful.
+- Return valid JSON only in this exact shape:
+{"summary":"...","estimatedTotal":123456,"breakdown":{"Lighting":123,"Food":456,"Logistics":789,"Misc":101},"recommendations":["...","..."]}
 `.trim();
 
   const llmResponse = await generateTextWithLlm(prompt);
@@ -746,13 +848,36 @@ Keep it plain text.
     };
   }
 
+  const parsed = extractJsonPayload(llmResponse.text);
+  if (parsed) {
+    const estimatedTotal = Math.max(Number(parsed.estimatedTotal || 0), 0);
+    const parsedBreakdown = parsed.breakdown || {};
+    const breakdown = {
+      Lighting: Math.max(Number(parsedBreakdown.Lighting || 0), 0),
+      Food: Math.max(Number(parsedBreakdown.Food || 0), 0),
+      Logistics: Math.max(Number(parsedBreakdown.Logistics || 0), 0),
+      Misc: Math.max(Number(parsedBreakdown.Misc || 0), 0),
+    };
+    const totalBreakdown = Object.values(breakdown).reduce((sum, value) => sum + value, 0);
+
+    if (estimatedTotal > 0 && totalBreakdown > 0) {
+      return {
+        source: llmResponse.source,
+        summary: normalizeSentence(parsed.summary || "") || `The estimate is informed by historical spending patterns for ${payload.eventType || "the selected event type"}.`,
+        estimatedTotal,
+        breakdown,
+        recommendations: normalizeBudgetRecommendations(parsed.recommendations, eventProfile.notes),
+      };
+    }
+  }
+
   const text = llmResponse.text;
-  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
+  const lines = text.split("\n").map((line) => normalizeSentence(line)).filter(Boolean);
   const estimateMatch = text.match(/(\d[\d,]*)/);
   const estimatedTotal = estimateMatch ? Number(estimateMatch[1].replace(/,/g, "")) : 100000;
   return {
     source: llmResponse.source,
-    summary: lines[0] || text,
+    summary: lines[0] || `The estimate is informed by historical spending patterns for ${payload.eventType || "the selected event type"}.`,
     estimatedTotal,
     breakdown: {
       Lighting: Math.round(estimatedTotal * eventProfile.breakdown.Lighting),
@@ -760,6 +885,6 @@ Keep it plain text.
       Logistics: Math.round(estimatedTotal * eventProfile.breakdown.Logistics),
       Misc: Math.round(estimatedTotal * eventProfile.breakdown.Misc),
     },
-    recommendations: lines.slice(-2).length > 0 ? lines.slice(-2) : eventProfile.notes,
+    recommendations: normalizeBudgetRecommendations(lines.slice(-2), eventProfile.notes),
   };
 };

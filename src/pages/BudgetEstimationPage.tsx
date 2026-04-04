@@ -8,6 +8,7 @@ import { fetchBudgetStore, formatBudgetCurrency, StoredBudgetRecord } from "@/li
 import { COLLEGE_BRAND } from "@/lib/clubs";
 
 type EstimateResponse = {
+  source?: string;
   summary?: string;
   estimatedTotal?: number;
   estimatedTotalFormatted?: string;
@@ -183,6 +184,9 @@ const BudgetEstimationPage = () => {
           <h2 className="text-lg font-bold uppercase">Estimate Summary</h2>
           {estimate ? (
             <div className="mt-4 space-y-4">
+              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                AI Source: {estimate.source || "template"}
+              </p>
               <p className="text-sm text-muted-foreground">{estimate.summary}</p>
               <div className="rounded-[18px] border border-foreground/10 bg-background px-4 py-4">
                 <p className="text-sm text-muted-foreground">Estimated Total</p>

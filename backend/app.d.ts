@@ -1,5 +1,8 @@
-declare module './app.js' {
-  const app: any;
+declare module "./app.js" {
+  import type { Express } from "express";
+
+  const app: Express;
+  export default app;
 }
 
-export {}; // ✅ THIS LINE IS IMPORTANT
+export {};

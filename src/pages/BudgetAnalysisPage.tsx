@@ -10,6 +10,7 @@ import { fetchBudgetStore, formatBudgetCurrency, StoredBudgetRecord } from "@/li
 const ANALYSIS_COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))"];
 
 type AnalysisResult = {
+  source?: string;
   summary?: string;
   insights?: string[];
   recommendation?: string;
@@ -155,6 +156,9 @@ const BudgetAnalysisPage = () => {
           <h2 className="text-lg font-bold uppercase">Analysis Result</h2>
           {result ? (
             <div className="mt-4 space-y-4">
+              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                AI Source: {result.source || "template"}
+              </p>
               <div className="rounded-[18px] border border-foreground/10 bg-background px-4 py-4">
                 <p className="font-semibold">Summary</p>
                 <p className="mt-2 text-sm text-muted-foreground">{String(result.summary || "No summary available.")}</p>

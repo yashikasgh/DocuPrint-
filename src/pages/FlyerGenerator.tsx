@@ -201,7 +201,6 @@ const FlyerGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [composedFlyer, setComposedFlyer] = useState("");
   const [status, setStatus] = useState("");
-  const [selectedBackgroundLabel, setSelectedBackgroundLabel] = useState("");
 
   const update = (field: keyof typeof formData, value: string) => {
     setFormData((previous) => ({ ...previous, [field]: value }));
@@ -435,7 +434,6 @@ const FlyerGenerator = () => {
       const selectedThemeBackground = randomThemeBackground(formData.theme);
       const backgroundSource = formData.customBackgroundDataUrl || selectedThemeBackground;
       await composeFlyer({ backgroundSource, overlayOpacity: 0.18 });
-      setSelectedBackgroundLabel("");
       setStatus("");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to generate flyer.");

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, LoaderCircle, LogOut, Save, UserRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
-import { supabase } from "@/lib/supabase";
+import { authClient } from "@/lib/supabase";
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -17,7 +17,7 @@ const ProfilePage = () => {
     setSaving(true);
     setStatus("");
 
-    const { error } = await supabase.auth.updateUser({
+    const { error } = await authClient.updateUser({
       data: {
         full_name: fullName,
       },
@@ -29,7 +29,7 @@ const ProfilePage = () => {
 
   const handleSignOut = async () => {
     setSigningOut(true);
-    await supabase.auth.signOut();
+    await authClient.signOut();
     navigate("/");
   };
 

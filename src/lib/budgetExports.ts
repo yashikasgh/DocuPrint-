@@ -3,15 +3,6 @@ import { api, base64PdfToObjectUrl, downloadBase64Pdf } from "@/lib/api";
 import { StoredBudgetRecord } from "@/lib/budgetStorage";
 import { COLLEGE_BRAND } from "@/lib/clubs";
 
-const downloadBlob = (blob: Blob, fileName: string) => {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  anchor.click();
-  URL.revokeObjectURL(url);
-};
-
 const flattenRows = (records: StoredBudgetRecord[]) =>
   records.flatMap((record) =>
     record.items.map((item) => ({

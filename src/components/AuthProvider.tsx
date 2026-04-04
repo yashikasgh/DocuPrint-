@@ -1,10 +1,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+import { authClient, type AuthSession, type AuthUser } from "@/lib/supabase";
 
 type AuthContextValue = {
-  session: Session | null;
-  user: User | null;
+  session: AuthSession | null;
+  user: AuthUser | null;
   loading: boolean;
 };
 
@@ -15,7 +14,7 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,7 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           currentUrl.hash.includes("refresh_token");
 
         if (authCode) {
-          await supabase.auth.exchangeCodeForSession(authCode).catch(() => null);
+          await authClient.exchangeCodeForSession(authCode).catch(() => null);
         }
 
         if (hasAuthCode) {
@@ -43,7 +42,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           window.history.replaceState({}, document.title, currentUrl.pathname + currentUrl.search);
         }
 
-        const { data } = await supabase.auth.getSession();
+        const { data } = await authClient.getSession();
         if (!mounted) {
           return;
         }
@@ -64,7 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = authClient.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setLoading(false);
     });

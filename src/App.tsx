@@ -24,6 +24,7 @@ const BudgetReportsPage = lazy(() => import("./pages/BudgetReportsPage.tsx"));
 const TimelinePlannerPage = lazy(() => import("./pages/TimelinePlannerPage.tsx"));
 const PostEventSummaryPage = lazy(() => import("./pages/PostEventSummaryPage.tsx"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage.tsx"));
+const TeamPage = lazy(() => import("./pages/TeamPage.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           <Suspense fallback={<div className="flex min-h-screen items-center justify-center font-mono text-sm text-muted-foreground">Loading...</div>}>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/team" element={<TeamPage />} />
               <Route
                 path="/dashboard"
                 element={

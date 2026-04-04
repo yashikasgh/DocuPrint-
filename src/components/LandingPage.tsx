@@ -5,15 +5,13 @@ import {
   FileText,
   Image,
   Printer,
-  Rocket,
   Users,
   Wallet,
-  CalendarRange,
-  FileBarChart,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { authClient, authModeLabel, isSupabaseConfigured } from "@/lib/supabase";
+import { footerLink } from "@/lib/siteContent";
 
 type Phase = "intro" | "printer" | "form";
 
@@ -37,31 +35,6 @@ const featureCards = [
     accent: "bg-accent",
   },
 ];
-
-const teamMembers = [
-  {
-    name: "Team Member 01",
-    role: "Frontend & Experience",
-    contribution: "Built the user journey, responsive layouts, and document flow screens.",
-  },
-  {
-    name: "Team Member 02",
-    role: "Backend & Generation",
-    contribution: "Implemented APIs for proposal PDFs, reports, attendance parsing, and flyer prompt generation.",
-  },
-  {
-    name: "Team Member 03",
-    role: "Analytics & Planning",
-    contribution: "Worked on budget estimation, activity timelines, and post-event summary insights.",
-  },
-  {
-    name: "Team Member 04",
-    role: "Testing & Documentation",
-    contribution: "Handled validation, review, and project presentation materials.",
-  },
-];
-
-const footerLink = "https://www.pccoepune.com/";
 
 const formatAuthError = (message: string) => {
   const normalized = String(message || "").toLowerCase();
@@ -173,17 +146,17 @@ const IntroLanding = ({ onContinue }: { onContinue: () => void }) => {
                   Start Demo Flow
                   <ArrowRight className="h-4 w-4" strokeWidth={3} />
                 </button>
-                <a href="#team" className="brutal-btn-outline flex items-center justify-center gap-2">
+                <Link to="/team" className="brutal-btn-outline flex items-center justify-center gap-2">
                   Meet the Team
                   <Users className="h-4 w-4" strokeWidth={3} />
-                </a>
+                </Link>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 {[
                   { label: "Proposal + report", icon: FileText },
-                  { label: "Timeline + budget", icon: CalendarRange },
-                  { label: "Summary + analytics", icon: FileBarChart },
+                  { label: "Timeline + budget", icon: Wallet },
+                  { label: "Secure sign-in", icon: Users },
                 ].map((item) => (
                   <div key={item.label} className="brutal-border bg-card p-4">
                     <item.icon className="h-5 w-5 text-primary" strokeWidth={2.5} />
@@ -192,7 +165,6 @@ const IntroLanding = ({ onContinue }: { onContinue: () => void }) => {
                 ))}
               </div>
             </motion.div>
-
             <motion.div
               variants={introMotion}
               initial="hidden"
@@ -210,30 +182,6 @@ const IntroLanding = ({ onContinue }: { onContinue: () => void }) => {
                 </div>
               ))}
             </motion.div>
-          </section>
-
-          <section id="team" className="mt-14 md:mt-20">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="h-4 w-10 bg-primary brutal-border" />
-              <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">Project Team</p>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {teamMembers.map((member) => (
-                <div key={member.name} className="brutal-card min-h-[230px]">
-                  <div className="brutal-border flex h-12 w-12 items-center justify-center bg-secondary">
-                    <Rocket className="h-5 w-5 text-secondary-foreground" strokeWidth={2.5} />
-                  </div>
-                  <h3 className="mt-5 text-lg font-bold uppercase">{member.name}</h3>
-                  <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                    {member.role}
-                  </p>
-                  <p className="mt-4 text-sm leading-7 text-muted-foreground">{member.contribution}</p>
-                </div>
-              ))}
-            </div>
-            <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              Replace the placeholder names above with your final team member names and exact roles.
-            </p>
           </section>
         </main>
       </div>
@@ -295,6 +243,7 @@ const PrinterAnimation = ({ onComplete }: { onComplete: () => void }) => {
 const SignUpForm = ({ onBackToIntro }: { onBackToIntro: () => void }) => {
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [mode, setMode] = useState<"signup" | "signin">("signup");
   const [fullName, setFullName] = useState("");
@@ -305,9 +254,10 @@ const SignUpForm = ({ onBackToIntro }: { onBackToIntro: () => void }) => {
 
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      const nextPath = typeof location.state?.from === "string" ? location.state.from : "/dashboard";
+      navigate(nextPath, { replace: true });
     }
-  }, [navigate, user]);
+  }, [location.state, navigate, user]);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -328,15 +278,9 @@ const SignUpForm = ({ onBackToIntro }: { onBackToIntro: () => void }) => {
       return;
     }
 
-    if (!isSupabaseConfigured) {
-      setSubmitting(false);
-      setStatus("Authentication is not configured. Add real VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY values in .env, then restart the app.");
-      return;
-    }
-
     if (mode === "signup") {
       try {
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await authClient.signUp({
           email: safeEmail,
           password: safePassword,
           options: {
@@ -366,7 +310,7 @@ const SignUpForm = ({ onBackToIntro }: { onBackToIntro: () => void }) => {
     }
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await authClient.signInWithPassword({
         email: safeEmail,
         password: safePassword,
       });
@@ -416,6 +360,9 @@ const SignUpForm = ({ onBackToIntro }: { onBackToIntro: () => void }) => {
             <h1 className="text-3xl font-bold uppercase tracking-tight">{mode === "signup" ? "Create Account" : "Welcome Back"}</h1>
             <p className="mt-1 font-mono text-sm text-muted-foreground">
               {mode === "signup" ? "Create documents that demand attention." : "Access your event workspace and continue where you left off."}
+            </p>
+            <p className="mt-3 font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              Auth mode: {isSupabaseConfigured ? authModeLabel : `${authModeLabel} for this browser`}
             </p>
           </div>
 

@@ -221,7 +221,7 @@ const BudgetPlannerPage = () => {
       const store = await persistBudgetStore(updated, categories);
       setRecords(store.records);
       setCategories(store.categories);
-      setExpenseForm((current) => ({ ...emptyExpense(), folderId: targetFolderId }));
+      setExpenseForm(() => ({ ...emptyExpense(), folderId: targetFolderId }));
       toast.success("Expense added to the selected folder.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to add expense.");

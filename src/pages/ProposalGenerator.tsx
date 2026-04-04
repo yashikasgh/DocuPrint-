@@ -218,11 +218,6 @@ const ProposalGenerator = () => {
     downloadBase64Pdf(generatedFile.pdfBase64, generatedFile.fileName);
   };
 
-  const keyPoints = data.keyPoints
-    .split("\n")
-    .map((item) => item.trim())
-    .filter(Boolean);
-
   return (
     <div className="min-h-screen p-6 md:p-10">
       <motion.header className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>

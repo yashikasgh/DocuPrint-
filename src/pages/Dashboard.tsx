@@ -15,7 +15,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
-import { supabase } from "@/lib/supabase";
+import { authClient } from "@/lib/supabase";
 
 const features = [
   {
@@ -110,7 +110,7 @@ const Dashboard = () => {
     .toUpperCase();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await authClient.signOut();
     navigate("/");
   };
 

@@ -18,10 +18,6 @@ To significantly reduce documentation time for events by automating the creation
 - React (Frontend)
 - Node.js / Express (Backend)
 
-## 📊 Dataset
-- Source of dataset  
-- Description  
-
 ## ⚙️ Installation
 Steps to run the project:
 
@@ -33,7 +29,20 @@ npm install
 ```
 
 ## ▶️ Usage
-How to run the project.
+To start the application locally, you will need to run the development servers.
+
+**1. Start the Frontend Application:**
+```bash
+# Open a terminal in the root folder and run:
+npm run dev
+```
+
+**2. Start the Backend API (if applicable):**
+```bash
+# In a new terminal, navigate to your backend folder and start the server:
+cd backend
+npm start # or the equivalent command for your Python/Node server
+```
 
 ## 📈 Results
 - Accuracy / outputs / screenshots

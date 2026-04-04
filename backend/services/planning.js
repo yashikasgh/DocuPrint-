@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { generateBudgetAnalysisNarrative, generateBudgetEstimateNarrative } from "./ai.js";
+import { generateBudgetAnalysisNarrative, generateBudgetEstimateNarrative, generateTimelineMilestones } from "./ai.js";
 import { formatCurrency, formatPercent, safeArray } from "../utils.js";
 
 const CATEGORY_BASELINES = {
@@ -79,22 +79,38 @@ export const analyzeBudget = (payload) => {
   };
 };
 
-export const buildTimeline = (payload) => {
+export const buildTimeline = async (payload) => {
+  // Try to generate milestones using AI
+  const aiResult = await generateTimelineMilestones(payload);
+
+  if (aiResult.milestones && aiResult.milestones.length > 0) {
+    // Add ID to AI-generated milestones
+    return aiResult.milestones.map((milestone, index) => ({
+      id: `${index + 1}`,
+      eventTitle: payload.eventTitle || "Event",
+      label: milestone.label,
+      date: milestone.date,
+      owner: milestone.owner,
+      status: milestone.status,
+    }));
+  }
+
+  // Fallback to hardcoded timeline if AI fails
   const eventDate = new Date(payload.eventDate || Date.now());
   const title = payload.eventTitle || "Event";
   const scale = payload.scale || "medium";
   const daysOffset = scale === "large" ? [42, 28, 21, 14, 7, 3, 1, 0, -1] : [28, 21, 14, 10, 7, 3, 1, 0, -1];
 
   const labels = [
-    "Finalize concept, goal, and approvals",
-    "Freeze budget draft and shortlist vendors",
-    "Open registrations and publish the flyer",
-    "Confirm speakers, volunteers, and room plan",
-    "Review risk checklist and print requirements",
-    "Run the final team briefing and dry run",
-    "Prepare attendance sheet, kits, and signage",
-    "Execute the event day schedule",
-    "Collect feedback, analytics, and post-event summary",
+    `Finalize concept, goal, and approvals for ${title}`,
+    `Freeze budget draft and shortlist vendors for ${title}`,
+    `Open registrations and publish the flyer for ${title}`,
+    `Confirm speakers, volunteers, and room plan for ${title}`,
+    `Review risk checklist and print requirements for ${title}`,
+    `Run the final team briefing and dry run for ${title}`,
+    `Prepare attendance sheet, kits, and signage for ${title}`,
+    `Execute the ${title} event day schedule`,
+    `Collect feedback, analytics, and post-event summary for ${title}`,
   ];
 
   return daysOffset.map((offset, index) => {
@@ -109,7 +125,7 @@ export const buildTimeline = (payload) => {
       date: milestoneDate.toISOString().split("T")[0],
       owner: index < 2 ? "Faculty coordinator" : index < 6 ? "Core student team" : "Operations desk",
       status:
-        offset > 7 ? "planned" : offset > 0 ? "upcoming" : offset === 0 ? "event-day" : "follow-up",
+        offset > 7 ? "pending" : offset > 0 ? "ongoing" : offset === 0 ? "event-day" : "completed",
     };
   });
 };

@@ -133,7 +133,7 @@ const ReportGenerator = () => {
       return;
     }
 
-    setStatus("Parsing attendance CSV...");
+    setStatus("Parsing attendance file...");
     try {
       const parsed = await api.parseAttendance(selectedFile);
       setAttendanceRecords(parsed.students || []);
@@ -147,6 +147,7 @@ const ReportGenerator = () => {
 
   const onPhotosChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files ? Array.from(event.target.files) : [];
+    photoPreviews.forEach((preview) => URL.revokeObjectURL(preview));
     setPhotoFiles(files);
     setPhotoPreviews(files.map((file) => URL.createObjectURL(file)));
   };
@@ -322,12 +323,12 @@ const ReportGenerator = () => {
 
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider">Description</label>
-            <textarea className="brutal-input min-h-[90px] resize-y" placeholder="Detailed workshop description" value={data.description} onChange={(event) => update("description", event.target.value)} />
+            <textarea className="brutal-input min-h-[90px] resize-y" placeholder="Detailed event description" value={data.description} onChange={(event) => update("description", event.target.value)} />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider">Topics Covered During Workshop</label>
-            <textarea className="brutal-input min-h-[90px] resize-y" placeholder="List all topics covered" value={data.topicsCovered} onChange={(event) => update("topicsCovered", event.target.value)} />
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider">Topics / Activities Covered</label>
+            <textarea className="brutal-input min-h-[90px] resize-y" placeholder="List the main topics, sessions, or activities covered" value={data.topicsCovered} onChange={(event) => update("topicsCovered", event.target.value)} />
           </div>
 
           <div>
@@ -348,9 +349,9 @@ const ReportGenerator = () => {
               )}
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider">Attendance CSV</label>
-              <input type="file" accept=".csv" className="brutal-input" onChange={onAttendanceFileChange} />
-              {attendanceRecords.length > 0 && <p className="text-xs text-muted-foreground mt-2">Parsed rows: {attendanceRecords.length}</p>}
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider">Attendance File</label>
+              <input type="file" accept=".csv,.xlsx,.xls" className="brutal-input" onChange={onAttendanceFileChange} />
+              {attendanceRecords.length > 0 && <p className="text-xs text-muted-foreground mt-2">Parsed rows: {attendanceRecords.length} from {attendanceFile?.name}</p>}
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider">Attendance Form Link</label>
@@ -385,7 +386,7 @@ const ReportGenerator = () => {
           </div>
 
           <div className="brutal-card space-y-4">
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">Workshop Summary</p>
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">Event Summary</p>
             <div className="grid grid-cols-2 gap-3">
               {[
                 ["Registered", data.participantsRegistered || "0"],
@@ -401,7 +402,7 @@ const ReportGenerator = () => {
                 </div>
               ))}
             </div>
-            <p className="text-sm leading-7 text-muted-foreground">{data.eventSummary || "Use this page to collect workshop report data, then generate a comprehensive PDF report with analytics and documentation."}</p>
+            <p className="text-sm leading-7 text-muted-foreground">{data.eventSummary || "Use this page to collect event report data, then generate a comprehensive PDF report with analytics and documentation."}</p>
           </div>
         </motion.div>
       </div>

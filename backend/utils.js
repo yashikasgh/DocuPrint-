@@ -282,7 +282,7 @@ const drawBadge = (page, bold, label, x, topY, hexColor, size = 52) => {
 };
 
 export const buildPdfDocument = async ({
-  title,
+  title: _title,
   collegeName,
   collegeAddress,
   documentLabel,
@@ -291,10 +291,13 @@ export const buildPdfDocument = async ({
   addressedTo,
   clubName,
   bodyParagraphs,
+  reportSections = [],
   highlights = [],
   analytics = [],
+  attendanceInsights = [],
   attendanceRecords = [],
   photoDataUrls = [],
+  photoCaptions = [],
   footerText,
   collegeLogo,
   clubLogo,
@@ -302,6 +305,8 @@ export const buildPdfDocument = async ({
   clubAcronym,
   collegeBrandColor,
   clubBrandColor,
+  reportSubtitle = "",
+  closingNote = "",
   signatories = [],
 }) => {
   const pdfDoc = await PDFDocument.create();
@@ -557,6 +562,14 @@ export const buildPdfDocument = async ({
     await drawTextLine(row, 11, 18, row.startsWith("Institution:") ? rgb(0.12, 0.12, 0.12) : rgb(0.0, 0.0, 0.0));
   }
 
+  if (reportSubtitle) {
+    y -= 6;
+    const subtitleLines = wrapText(reportSubtitle, font, 10.2, contentWidth);
+    for (const line of subtitleLines) {
+      await drawTextLine(line, 10.2, 14, rgb(0.35, 0.35, 0.38));
+    }
+  }
+
   y -= 12;
 
   // Add analytics boxes for key metrics
@@ -593,8 +606,17 @@ export const buildPdfDocument = async ({
     y -= boxHeight + 20; // Space after all analytics boxes (boxHeight + extra margin)
   }
 
+  const narrativeBlocks =
+    reportSections.length > 0
+      ? reportSections.flatMap((section) => [
+          `### ${section.heading}`,
+          ...safeArray(section.paragraphs),
+          ...safeArray(section.bullets).map((item) => `- ${item}`),
+        ])
+      : bodyParagraphs;
+
   // Process body paragraphs with section headers
-  for (const paragraph of bodyParagraphs) {
+  for (const paragraph of narrativeBlocks) {
     const lines = wrapText(paragraph, font, 11, contentWidth);
 
     // Check if this looks like a section header (more robust detection)
@@ -631,7 +653,7 @@ export const buildPdfDocument = async ({
     }
 
     // Force page break if we're getting close to the end and have more content
-    if (y < 150 && bodyParagraphs.indexOf(paragraph) < bodyParagraphs.length - 1) {
+    if (y < 150 && narrativeBlocks.indexOf(paragraph) < narrativeBlocks.length - 1) {
       await startNewPage();
     }
   }
@@ -742,6 +764,16 @@ export const buildPdfDocument = async ({
   };
 
   await drawBulletSection("Key Highlights", safeArray(highlights));
+  await drawBulletSection("Attendance Insights", safeArray(attendanceInsights));
+
+  if (closingNote) {
+    await drawSectionHeader("Closing Note");
+    const closingLines = wrapText(closingNote, font, 10.8, contentWidth);
+    for (const line of closingLines) {
+      await drawTextLine(line, 10.8, 15, rgb(0.18, 0.18, 0.18));
+    }
+    y -= 10;
+  }
   // Remove duplicate analytics section since they're already shown as boxes above
 
   if (attendanceRecords && attendanceRecords.length > 0) {
@@ -820,6 +852,12 @@ export const buildPdfDocument = async ({
             height: dimensions.height,
           });
           y -= dimensions.height + 8;
+
+          const caption = sanitizeText(photoCaptions[index] || `Event documentation photograph ${index + 1}`);
+          const captionLines = wrapText(caption, font, 9.4, contentWidth - 30);
+          for (const line of captionLines) {
+            await drawTextLine(line, 9.4, 12, rgb(0.35, 0.35, 0.38));
+          }
         } catch {
           await drawTextLine("Unable to render photo (invalid image data)", 10, 14, rgb(0.6, 0.2, 0.2));
         }

@@ -111,121 +111,202 @@ const fallbackProposalParagraphs = (payload) => [
 ];
 
 const createReportPrompt = (payload) => {
-  const numericAtt = payload.participantsAppeared ? String(payload.participantsAppeared) : "not available";
-  const budgetApproved = payload.eventFee || payload.workshopFee ? `Rs. ${Number(payload.eventFee || payload.workshopFee).toLocaleString("en-IN")}` : "not provided";
-  const feedback = payload.feedback ? `${payload.feedback}/10` : "not available";
+  const analytics = payload.analyticsSummary || {};
+  const imageCaptions = Array.isArray(payload.imageCaptions) ? payload.imageCaptions : [];
+  const attendanceSummaryLines = Array.isArray(analytics.attendanceBreakdown)
+    ? analytics.attendanceBreakdown.map((line) => `- ${line}`).join("\n")
+    : "- Attendance breakdown not available";
+  const imageLines =
+    imageCaptions.length > 0
+      ? imageCaptions.map((caption, index) => `${index + 1}. ${caption}`).join("\n")
+      : "1. Use the uploaded event photographs as supporting evidence with natural captions.";
 
-  return `You are a professional event report automation engine for Pillai College of Engineering committee event documentation. Generate a comprehensive event report that spans at least 2-3 pages when formatted. Focus on creating an engaging, modern event report style rather than a traditional formal document.
+  return `
+You are preparing a formal college post-event report for PDF export.
 
-## Pillai College of Engineering - Event Report
+Your job is to write the REPORT CONTENT ONLY, in a structure that can be placed into a 2-3 page post-event report with analytics, attendance analysis, and photographs.
 
-**Institution:** ${payload.collegeName || "Pillai College of Engineering"}
-**Organizing Body:** ${payload.studentChapterName || payload.clubName || "Student Committee"}
-**Event Title:** ${payload.eventName || "Event Title"}
-**Date:** ${payload.eventDate || payload.workshopDate || "Event Date"}
-**Location:** ${payload.eventVenue || payload.workshopVenue || "Campus Venue"}
-**Event Coordinator:** ${payload.eventInstructor || payload.workshopInstructor || "Event Coordinator"}
-**Student Event Head:** ${payload.studentEventHead || "Student Lead"}
-**Faculty Event Head:** ${payload.facultyEventHead || "Faculty Supervisor"}
+Requirements:
+1. Write in a formal institutional tone suitable for submission to college authorities.
+2. Make the report detailed enough to fill roughly 2-3 A4 pages when typeset.
+3. Use the exact section order below.
+4. Use the supplied attendance analytics explicitly. Do not invent metrics that contradict the data.
+5. Refer to photographs naturally as event documentation wherever appropriate.
+6. Return valid JSON only. No markdown fences. No commentary outside JSON.
 
-### Executive Overview
-Provide a compelling 2-paragraph executive summary that highlights the workshop's success, learning outcomes, and key achievements. Make it engaging and results-focused.
+Return JSON in this exact shape:
+{
+  "title": "string",
+  "subtitle": "string",
+  "sections": [
+    {
+      "heading": "string",
+      "paragraphs": ["string", "string"],
+      "bullets": ["string", "string"]
+    }
+  ],
+  "photoCaptions": ["string", "string", "string"],
+  "closingNote": "string"
+}
 
-### Event Vision & Objectives
-- **Core Purpose:** Explain the fundamental goal and how it aligns with institutional objectives
-- **Target Learning Outcomes:** Describe expected skills and knowledge gains for participants
-- **Strategic Alignment:** How this event supports curriculum, career development, and institutional mission
-- **Innovation Elements:** Any unique methodologies or modern approaches used
+Use these sections in this exact order:
+1. Introduction
+2. Objectives of the Event
+3. Planning and Execution
+4. Participation and Attendance Analysis
+5. Sessions and Key Activities
+6. Outcomes and Impact
+7. Feedback and Observations
+8. Conclusion
 
-### Implementation & Execution
-- **Planning Timeline:** Key preparation milestones and coordination phases
-- **Resource Mobilization:** Coordinator/speaker coordination, material preparation, and logistics
-- **Promotion Strategy:** ${payload.criteria || "Registration criteria and outreach methods"}
-- **Execution Highlights:** Real-time coordination and adaptability during the event
-- **Duration & Scale:** Event structure and session breakdown
+Context:
+College: ${payload.collegeName || "Pillai College of Engineering"}
+College address: ${payload.collegeAddress || "Not provided"}
+Organizing body: ${payload.studentChapterName || payload.clubName || "Student Committee"}
+Department: ${payload.department || "Not provided"}
+Event title: ${payload.eventName || "Event Title"}
+Date: ${payload.eventDate || "Not provided"}
+Venue: ${payload.eventVenue || "Not provided"}
+Mode: ${payload.mode || "Offline"}
+Addressed to: ${payload.authorityName || "Respective authority"}
+Speaker / Instructor: ${payload.eventInstructor || "Not provided"}
+Student coordinator: ${payload.studentEventHead || "Not provided"}
+Faculty coordinator: ${payload.facultyEventHead || "Not provided"}
+Eligibility / criteria: ${payload.criteria || "Not provided"}
+Description: ${clampText(payload.description || "", 1800)}
+Topics covered: ${clampText(payload.topicsCovered || "", 1800)}
+Event summary: ${clampText(payload.eventSummary || "", 2200)}
+Key highlights: ${safeStringList(payload.keyHighlights).join("; ") || "Not provided"}
+Attendance form / method: ${payload.attendanceForm || payload.attendanceFormLink || "Not provided"}
+Feedback details: ${payload.feedback || "Not provided"}
+Feedback form link: ${payload.feedbackFormLink || "Not provided"}
+Event fee / budget note: ${payload.eventFee ? `Rs. ${Number(payload.eventFee).toLocaleString("en-IN")}` : "Not provided"}
 
-### Participant Experience & Engagement
-- **Total Registrations:** ${payload.participantsRegistered || "N/A"} participants registered
-- **Actual Attendance:** ${payload.participantsAppeared || "N/A"} participants appeared
-- **Engagement Metrics:** Participation levels, interaction quality, and event engagement
-- **Demographic Insights:** Participant background and interest distribution
-- **Experience Quality:** Factors contributing to participant satisfaction
+Attendance analytics:
+- Registered participants: ${analytics.registeredCount ?? payload.participantsRegistered ?? "Not available"}
+- Appeared participants: ${analytics.appearedCount ?? payload.participantsAppeared ?? "Not available"}
+- Attendance file records: ${analytics.rosterCount ?? "Not available"}
+- Attendance rate: ${analytics.attendanceRateFormatted || "Not available"}
+- Named records completeness: ${analytics.completenessFormatted || "Not available"}
+- Branches represented: ${analytics.branchCount ?? "Not available"}
+- Divisions represented: ${analytics.divisionCount ?? "Not available"}
+- Years represented: ${analytics.yearCount ?? "Not available"}
+Attendance breakdown:
+${attendanceSummaryLines}
 
-### Financial Performance & Efficiency
-- **Event Fee:** ${budgetApproved}
-- **Cost per Participant:** ${payload.participantsAppeared && (payload.eventFee || payload.workshopFee) ? `Rs. ${(Number(payload.eventFee || payload.workshopFee) / Number(payload.participantsAppeared)).toFixed(2)}` : "N/A"}
-- **Financial Insights:** Value delivery and cost-effectiveness analysis
+Photograph notes:
+${imageLines}
 
-### Event Content & Delivery
-- **Topics Covered:** ${payload.topicsCovered || "Event curriculum and learning modules"}
-- **Delivery Methodology:** Instructional approaches and delivery methods
-- **Learning Materials:** Resources provided and reference materials
-- **Practical Components:** Activities and hands-on sessions conducted
-- **Assessment Methods:** Evaluation and feedback mechanisms used
-
-### Outcomes & Achievements
-- **Key Outcomes:** ${payload.description || "Skills and knowledge acquired"}
-- **Success Indicators:** Quantitative and qualitative achievement measures
-- **Impact Assessment:** Short-term and potential long-term effects
-- **Participant Benefits:** Value delivered to attendees and their development
-
-### Key Highlights & Success Stories
-- **Outstanding Moments:** Memorable experiences and breakthroughs
-- **Participant Achievements:** Notable accomplishments and outcomes
-- **Delivery Excellence:** Effective approaches that worked well
-- **Community Impact:** Influence on participant learning and culture
-
-### Feedback Analysis & Quality Metrics
-- **Overall Satisfaction:** ${payload.feedback || "Participant feedback summary"}
-- **Strength Areas:** What worked exceptionally well
-- **Improvement Opportunities:** Constructive feedback for future events
-- **Quality Benchmarks:** How this event compares to similar engagements
-
-### Operational Insights & Lessons Learned
-- **Process Excellence:** What made the event execution smooth
-- **Challenge Management:** Obstacles encountered and solutions implemented
-- **Team Performance:** Coordination between coordinators, organizers, and support staff
-- **Technology Integration:** Digital tools and platforms utilized effectively
-
-### Documentation & Compliance
-- **Attendance Records:** ${payload.attendanceForm || "Attendance tracking methods"}
-- **Feedback Collection:** ${payload.feedbackFormLink || "Feedback mechanisms used"}
-- **Photo Documentation:** ${payload.photos || "Visual records maintained"}
-
-### Strategic Recommendations & Future Planning
-1. **Content Enhancement:** Recommendations for improvement
-2. **Delivery Optimization:** Better coordination and facilitation methods
-3. **Scaling Potential:** How to expand successful elements
-4. **Sustainability Measures:** Long-term planning for event series
-
-### Conclusion & Next Steps
-- **Event Legacy:** Lasting impact on participant development
-- **Knowledge Transfer:** Lessons for future planning
-- **Future Roadmap:** Immediate follow-up actions and vision
-- **Recognition & Appreciation:** Acknowledging team excellence
-
-**Report Generated:** ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
-**Event Mode:** ${payload.mode || "Offline"}
-**Prepared by:** ${payload.studentChapterName || payload.clubName || "Event Committee"}
-
-IMPORTANT: Ensure the report is comprehensive (minimum 1500 words), uses engaging language, includes specific metrics and outcomes, and focuses on impact rather than just process. Make it professionally structured with clear sections.`;
+Important writing rules:
+- Mention concrete attendance insights in the Participation and Attendance Analysis section.
+- Mention that photographs were recorded and embedded as evidence of participation and execution quality.
+- Do not use placeholders like "insert image here".
+- Keep each paragraph substantial and polished.
+- If some information is missing, write gracefully without calling the data "missing".
+`.trim();
 };
 
-const fallbackReportParagraphs = (payload) => {
-  return [
-    `Executive Summary: The ${payload.eventTitle} event by ${payload.clubName} at ${payload.venue || "the college"} on ${payload.eventDate || "the scheduled date"} delivered strong participation and met key objectives.`,
-    `Event Details: Attendance was ${payload.totalAttendees || "N/A"} and target audience included ${payload.targetAudience || "students and faculty"}.`,
-    `Objectives: ${payload.objective || "N/A"}.`,
-    `Analytics: Budget was ${payload.totalBudget ? `Rs. ${Number(payload.totalBudget).toLocaleString("en-IN")}` : "N/A"}, actual spend ${payload.actualSpend ? `Rs. ${Number(payload.actualSpend).toLocaleString("en-IN")}` : "N/A"}; feedback score ${payload.feedbackScore || "N/A"}.`,
-    `Insights & recommendations: Continue focusing on student involvement and tighten financial monitoring.`,
-  ];
+const safeStringList = (value) =>
+  Array.isArray(value)
+    ? value.map((item) => clampText(item, 240)).filter(Boolean)
+    : [];
+
+const normalizeJsonText = (value) => {
+  const text = String(value || "").trim();
+  const firstBrace = text.indexOf("{");
+  const lastBrace = text.lastIndexOf("}");
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+    return text;
+  }
+
+  return text.slice(firstBrace, lastBrace + 1);
+};
+
+const buildFallbackReportNarrative = (payload) => {
+  const analytics = payload.analyticsSummary || {};
+  const title = payload.eventName || payload.eventTitle || "Post-Event Report";
+  const attendanceLine = analytics.attendanceRateFormatted
+    ? `The event recorded ${analytics.appearedCount || payload.participantsAppeared || analytics.rosterCount || "multiple"} participants, reflecting an attendance rate of ${analytics.attendanceRateFormatted}.`
+    : `The event recorded ${analytics.appearedCount || payload.participantsAppeared || analytics.rosterCount || "multiple"} participants and sustained active involvement across the scheduled sessions.`;
+  const breakdown = Array.isArray(analytics.attendanceBreakdown) ? analytics.attendanceBreakdown : [];
+
+  return {
+    title,
+    subtitle: `${payload.studentChapterName || payload.clubName || "Organizing Committee"} | ${payload.eventDate || "Event Date"} | ${payload.eventVenue || "Venue"}`,
+    sections: [
+      {
+        heading: "Introduction",
+        paragraphs: [
+          `${title} was organized by ${payload.studentChapterName || payload.clubName || "the organizing body"} on ${payload.eventDate || "the scheduled date"} at ${payload.eventVenue || "the designated venue"}. The programme was designed to create a meaningful academic and co-curricular engagement aligned with institutional objectives.`,
+          `${clampText(payload.eventSummary || payload.description || "The event was conducted with a focus on structured delivery, participant engagement, and measurable outcomes.", 900)}`
+        ],
+        bullets: [],
+      },
+      {
+        heading: "Objectives of the Event",
+        paragraphs: [
+          `The central objective of the event was to provide participants with an opportunity to engage with ${clampText(payload.topicsCovered || payload.description || "relevant themes and practical learning experiences", 900)}.`,
+        ],
+        bullets: safeStringList(payload.keyHighlights).slice(0, 4),
+      },
+      {
+        heading: "Planning and Execution",
+        paragraphs: [
+          `The event planning process included coordination among the organizing committee, faculty representatives, and operational support members to ensure smooth scheduling, venue readiness, communication, and participant management.`,
+          `Execution on the event day was guided by the student coordinator ${payload.studentEventHead || "from the organizing team"} and the faculty coordinator ${payload.facultyEventHead || "assigned by the department"}, with support from ${payload.eventInstructor || "the invited speaker / facilitator"}.`,
+        ],
+        bullets: [],
+      },
+      {
+        heading: "Participation and Attendance Analysis",
+        paragraphs: [
+          attendanceLine,
+          breakdown.length > 0
+            ? `Attendance analysis of the uploaded roster shows representation across ${analytics.yearCount || 0} year groups, ${analytics.branchCount || 0} branches, and ${analytics.divisionCount || 0} divisions, indicating a healthy spread of participation.`
+            : `The attendance records were reviewed to understand participation quality and roster completeness.`,
+        ],
+        bullets: breakdown.slice(0, 5),
+      },
+      {
+        heading: "Sessions and Key Activities",
+        paragraphs: [
+          `${clampText(payload.topicsCovered || "The sessions covered the planned themes, discussions, and practical components of the event.", 1200)}`,
+        ],
+        bullets: safeStringList(payload.keyHighlights).slice(0, 5),
+      },
+      {
+        heading: "Outcomes and Impact",
+        paragraphs: [
+          `${clampText(payload.description || "The event delivered visible academic and engagement outcomes for the participating students and reinforced the relevance of collaborative event-based learning.", 1200)}`,
+        ],
+        bullets: [],
+      },
+      {
+        heading: "Feedback and Observations",
+        paragraphs: [
+          `${clampText(payload.feedback || "The overall response to the event was positive, with participants appreciating the relevance of the content, the organization of the sessions, and the opportunity for meaningful engagement.", 900)}`,
+          `Photographic documentation was maintained throughout the event and has been included in the report to support the recorded activities and participation.`,
+        ],
+        bullets: [],
+      },
+      {
+        heading: "Conclusion",
+        paragraphs: [
+          `The event concluded successfully and met its intended objectives through organized execution, active participation, and clear educational value. The report, attendance analysis, and supporting photographs together present a complete record of the programme.`,
+        ],
+        bullets: [],
+      },
+    ],
+    photoCaptions: safeStringList(payload.imageCaptions).slice(0, 6),
+    closingNote: "This report is generated for institutional documentation and review.",
+  };
 };
 
 export const generateReportNarrative = async (payload) => {
   const prompt = createReportPrompt(payload);
   if (!config.mistralApiKey) {
     return {
-      paragraphs: fallbackReportParagraphs(payload),
+      report: buildFallbackReportNarrative(payload),
       prompt,
       source: "template",
       analytics: [],
@@ -247,8 +328,8 @@ export const generateReportNarrative = async (payload) => {
             content: prompt,
           },
         ],
-        max_tokens: 1500,
-        temperature: 0.2,
+        max_tokens: 2200,
+        temperature: 0.15,
       }),
     });
 
@@ -259,15 +340,20 @@ export const generateReportNarrative = async (payload) => {
 
     const data = await response.json();
     const generatedText = data?.choices?.[0]?.message?.content || "";
+    const cleaned = normalizeJsonText(generatedText);
+    const parsed = JSON.parse(cleaned);
+    const sections = Array.isArray(parsed?.sections)
+      ? parsed.sections
+          .map((section) => ({
+            heading: clampText(section?.heading || "", 120),
+            paragraphs: safeStringList(section?.paragraphs).slice(0, 4),
+            bullets: safeStringList(section?.bullets).slice(0, 6),
+          }))
+          .filter((section) => section.heading && (section.paragraphs.length > 0 || section.bullets.length > 0))
+      : [];
 
-    const cleaned = String(generatedText || "").trim();
-    const paragraphs = cleaned
-      .split(/\n{2,}/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-
-    if (paragraphs.length === 0) {
-      throw new Error("Mistral response did not contain text");
+    if (sections.length === 0) {
+      throw new Error("Mistral response did not contain valid report sections");
     }
 
     const analytics = [
@@ -278,7 +364,13 @@ export const generateReportNarrative = async (payload) => {
     ].filter(Boolean);
 
     return {
-      paragraphs,
+      report: {
+        title: clampText(parsed?.title || payload.eventName || "Post-Event Report", 180),
+        subtitle: clampText(parsed?.subtitle || "", 240),
+        sections,
+        photoCaptions: safeStringList(parsed?.photoCaptions).slice(0, 8),
+        closingNote: clampText(parsed?.closingNote || "", 400),
+      },
       prompt,
       source: "mistral",
       analytics,
@@ -286,7 +378,7 @@ export const generateReportNarrative = async (payload) => {
   } catch (error) {
     console.error("Mistral report generation error:", error);
     return {
-      paragraphs: fallbackReportParagraphs(payload),
+      report: buildFallbackReportNarrative(payload),
       prompt,
       source: "template",
       analytics: [],

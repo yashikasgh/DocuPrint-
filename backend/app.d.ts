@@ -1,5 +1,5 @@
-declare module './app.js' {
-  const app: any;
+declare module "./app.js" {
+  const app: unknown;
 }
 
-export {}; // ✅ THIS LINE IS IMPORTANT
+export {};

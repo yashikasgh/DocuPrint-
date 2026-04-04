@@ -1,21 +1,5 @@
-import { buildBudgetEstimatePdf, buildBudgetSheetPdf, buildPdfDocument, clampText, formatCurrency, normalizeDate, safeArray } from "../utils.js";
-import { generateProposalNarrative } from "./ai.js";
-
-const buildReportParagraphs = (payload) => {
-  const attendeeLine = payload.totalAttendees
-    ? `${payload.totalAttendees} attendees participated`
-    : "attendance details will be finalized by the organizing team";
-  const budgetLine = payload.actualSpend
-    ? `The final spend was ${formatCurrency(payload.actualSpend)} against an approved estimate of ${formatCurrency(payload.totalBudget || payload.actualSpend)}.`
-    : "The final financial reconciliation is in progress.";
-
-  return [
-    `This report summarizes the event "${payload.eventTitle}" organized by the ${payload.clubName} on ${normalizeDate(payload.eventDate)} at ${payload.venue || "the designated venue"}.`,
-    `Based on the inputs submitted, ${attendeeLine}. The event focus included ${clampText(payload.eventSummary || "knowledge sharing, engagement, and structured execution")}.`,
-    `${budgetLine} The organizing team tracked the event through planned activities, participant engagement, and operational checkpoints.`,
-    `Major outcomes include ${clampText(payload.outcomes || "successful execution, audience participation, and completion of the planned agenda")}. Supporting photographs and highlights have been included separately for archival and review purposes.`,
-  ];
-};
+import { buildBudgetEstimatePdf, buildBudgetSheetPdf, buildPdfDocument, clampText, formatCurrency, formatPercent, normalizeDate, safeArray, titleCase } from "../utils.js";
+import { generateProposalNarrative, generateReportNarrative } from "./ai.js";
 
 export const generateProposalDocument = async (payload) => {
   const proposalNarrative = await generateProposalNarrative(payload);
@@ -55,25 +39,90 @@ export const generateProposalDocument = async (payload) => {
 };
 
 export const generateReportDocument = async (payload) => {
+  const attendanceRecords = safeArray(payload.attendanceRecords);
+  const registeredCount = Number(payload.participantsRegistered || 0) || attendanceRecords.length || 0;
+  const appearedCount =
+    Number(payload.participantsAppeared || 0) ||
+    attendanceRecords.filter((record) => record?.selected !== false).length ||
+    attendanceRecords.length ||
+    0;
+  const namedRecords = attendanceRecords.filter((record) => clampText(record?.name || "", 120));
+  const yearCounts = attendanceRecords.reduce((map, record) => {
+    const key = clampText(record?.year || "", 20);
+    if (key) map.set(key, (map.get(key) || 0) + 1);
+    return map;
+  }, new Map());
+  const branchCounts = attendanceRecords.reduce((map, record) => {
+    const key = clampText(record?.branch || "", 40);
+    if (key) map.set(key, (map.get(key) || 0) + 1);
+    return map;
+  }, new Map());
+  const divisionCounts = attendanceRecords.reduce((map, record) => {
+    const key = clampText(record?.division || "", 20);
+    if (key) map.set(key, (map.get(key) || 0) + 1);
+    return map;
+  }, new Map());
+
+  const mapToBreakdown = (label, entries) =>
+    [...entries.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([key, value]) => `${label} ${titleCase(key)}: ${value} participants`);
+
+  const attendanceRate = registeredCount > 0 ? appearedCount / registeredCount : 0;
+  const completenessRate = attendanceRecords.length > 0 ? namedRecords.length / attendanceRecords.length : 0;
+
+  const analyticsSummary = {
+    registeredCount,
+    appearedCount,
+    rosterCount: attendanceRecords.length,
+    attendanceRate,
+    attendanceRateFormatted: registeredCount > 0 ? formatPercent(attendanceRate) : "Not available",
+    completenessRate,
+    completenessFormatted: attendanceRecords.length > 0 ? formatPercent(completenessRate) : "Not available",
+    yearCount: yearCounts.size,
+    branchCount: branchCounts.size,
+    divisionCount: divisionCounts.size,
+    attendanceBreakdown: [
+      ...(registeredCount > 0 ? [`Registration conversion: ${appearedCount} of ${registeredCount} participants attended`] : []),
+      ...(attendanceRecords.length > 0 ? [`Roster records analyzed: ${attendanceRecords.length}`] : []),
+      ...mapToBreakdown("Year", yearCounts),
+      ...mapToBreakdown("Branch", branchCounts),
+      ...mapToBreakdown("Division", divisionCounts),
+    ],
+  };
+
+  const reportNarrative = await generateReportNarrative({
+    ...payload,
+    analyticsSummary,
+    imageCaptions: safeArray(payload.imageCaptions).length > 0
+      ? safeArray(payload.imageCaptions)
+      : safeArray(payload.photoDataUrls).map((_value, index) => `Event documentation photograph ${index + 1}`),
+  });
+
   const analytics = [
-    payload.totalAttendees ? `Participants recorded: ${payload.totalAttendees}` : null,
-    payload.feedbackScore ? `Average feedback score: ${payload.feedbackScore}/10` : null,
-    payload.totalBudget ? `Approved budget: ${formatCurrency(payload.totalBudget)}` : null,
-    payload.actualSpend ? `Actual spend: ${formatCurrency(payload.actualSpend)}` : null,
+    registeredCount ? `Registered: ${registeredCount}` : null,
+    appearedCount ? `Attended: ${appearedCount}` : null,
+    registeredCount > 0 ? `Attendance Rate: ${formatPercent(attendanceRate)}` : null,
+    attendanceRecords.length > 0 ? `Roster Records: ${attendanceRecords.length}` : null,
+    payload.feedback ? `Feedback: ${payload.feedback}` : null,
+    payload.eventFee ? `Event Fee: ${formatCurrency(payload.eventFee)}` : null,
   ].filter(Boolean);
 
   const pdfBuffer = await buildPdfDocument({
-    title: "Event Report",
+    title: reportNarrative.report?.title || payload.eventName || "Event Report",
     collegeName: payload.collegeName,
     collegeAddress: payload.collegeAddress,
     documentLabel: "Event Report",
     date: payload.date || payload.eventDate,
-    subject: payload.subject || `Report for ${payload.eventTitle || "Event"}`,
-    addressedTo: payload.authorityName,
-    clubName: payload.clubName,
-    bodyParagraphs: buildReportParagraphs(payload),
+    subject: payload.subject || payload.eventName || payload.eventTitle || "Event Report",
+    addressedTo: payload.eventVenue || payload.authorityName,
+    clubName: payload.studentChapterName || payload.clubName,
+    bodyParagraphs: [],
+    reportSections: reportNarrative.report?.sections || [],
     highlights: safeArray(payload.keyHighlights),
     analytics,
+    attendanceInsights: analyticsSummary.attendanceBreakdown,
     footerText: "Generated by DocuPrint Reporting Engine",
     collegeLogo: payload.collegeLogo,
     clubLogo: payload.clubLogo,
@@ -81,14 +130,23 @@ export const generateReportDocument = async (payload) => {
     clubAcronym: payload.clubAcronym,
     collegeBrandColor: payload.collegeBrandColor,
     clubBrandColor: payload.clubBrandColor,
+    attendanceRecords,
+    photoDataUrls: safeArray(payload.photoDataUrls),
+    photoCaptions:
+      reportNarrative.report?.photoCaptions?.length > 0
+        ? reportNarrative.report.photoCaptions
+        : safeArray(payload.photoDataUrls).map((_value, index) => `Event documentation photograph ${index + 1}`),
+    reportSubtitle: reportNarrative.report?.subtitle || "",
+    closingNote: reportNarrative.report?.closingNote || "",
   });
 
   return {
-    fileName: `${(payload.eventTitle || "event-report").replace(/\s+/g, "-").toLowerCase()}.pdf`,
+    fileName: `${(payload.eventName || payload.eventTitle || "event-report").replace(/\s+/g, "-").toLowerCase()}.pdf`,
     summary: {
-      eventTitle: payload.eventTitle,
-      totalAttendees: payload.totalAttendees || null,
-      actualSpend: payload.actualSpend ? formatCurrency(payload.actualSpend) : null,
+      eventTitle: payload.eventName || payload.eventTitle,
+      totalAttendees: appearedCount || null,
+      attendanceRate: registeredCount > 0 ? formatPercent(attendanceRate) : null,
+      narrativeSource: reportNarrative.source,
       keyHighlights: safeArray(payload.keyHighlights),
     },
     pdfBuffer,

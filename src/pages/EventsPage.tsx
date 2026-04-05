@@ -146,7 +146,8 @@ const EventsPage = () => {
     setFeedbackState("loading");
     setFeedbackOpen(true);
     try {
-      const res = await fetch("http://localhost:8787/api/feedback/generate", {
+      const BACKEND = import.meta.env.PROD ? "" : "http://localhost:8787";
+      const res = await fetch(`${BACKEND}/api/feedback/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

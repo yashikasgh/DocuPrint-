@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const dataDirectory = path.resolve(__dirname, "../data");
+const dataDirectory = process.env.VERCEL ? "/tmp" : path.resolve(__dirname, "../data");
 const storePath = path.join(dataDirectory, "attendance-store.json");
 
 const defaultStore = {

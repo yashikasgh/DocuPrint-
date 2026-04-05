@@ -10,6 +10,7 @@ import {
   Wallet,
   CalendarRange,
   FileBarChart,
+  CalendarCheck,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -129,9 +130,13 @@ const IntroLanding = ({ onContinue }: { onContinue: () => void }) => {
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 md:px-10">
         <header className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="brutal-border flex h-12 w-12 items-center justify-center bg-foreground">
-              <Printer className="h-6 w-6 text-primary-foreground" strokeWidth={2.5} />
-            </div>
+            <motion.div
+              className="brutal-border flex h-12 w-12 items-center justify-center bg-foreground cursor-pointer"
+              whileHover={{ scale: 1.08 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CalendarCheck className="h-6 w-6 text-primary-foreground" strokeWidth={2.5} />
+            </motion.div>
             <div>
               <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-muted-foreground">DocuPrint</p>
               <h1 className="text-lg font-bold uppercase tracking-tight">Event Document Generator</h1>

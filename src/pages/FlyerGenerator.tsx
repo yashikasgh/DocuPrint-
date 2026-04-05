@@ -50,7 +50,7 @@ const themeBackgrounds: Record<string, string[][]> = {
   Workshop: [["/theme/workshop/01.jpg", "/theme/workshop/01.jpeg"], ["/theme/workshop/02.jpg", "/theme/workshop/02.jpeg"]],
   "AI & Machine Learning": [["/theme/ai-machine-learning/01.jpg", "/theme/ai-machine-learning/01.jpeg"], ["/theme/ai-machine-learning/02.jpg", "/theme/ai-machine-learning/02.jpeg"]],
   Cybersecurity: [["/theme/cybersecurity/01.jpg", "/theme/cybersecurity/01.jpeg"], ["/theme/cybersecurity/02.jpg", "/theme/cybersecurity/02.jpeg"]],
-  Robotics: [["/theme/robotics/01.jpg", "/theme/robotics/01.jpeg"], ["/theme/robotics/02.jpg", "/theme/robotics/02.jpeg"]],
+  Robotics: [["/theme/robotics/01.jpg", "/theme/robotics/01.jpeg"], ["/theme/robotics/02.jpg", "/theme/robotics/02.jpeg", "/theme/robotics/02.png"]],
   "Startup & Innovation": [["/theme/startup-innovation/01.jpg", "/theme/startup-innovation/01.jpeg"], ["/theme/startup-innovation/02.jpg", "/theme/startup-innovation/02.jpeg"]],
 };
 

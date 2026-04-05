@@ -172,6 +172,15 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/generate/feedback"
+                element={
+                  <ProtectedRoute>
+                    <FeedbackGeneratorPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/feedback/:formId" element={<FeedbackFormPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

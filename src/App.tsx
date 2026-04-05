@@ -25,6 +25,7 @@ const TimelinePlannerPage = lazy(() => import("./pages/TimelinePlannerPage.tsx")
 const PostEventSummaryPage = lazy(() => import("./pages/PostEventSummaryPage.tsx"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage.tsx"));
 const TeamPage = lazy(() => import("./pages/TeamPage.tsx"));
+const AboutProjectPage = lazy(() => import("./pages/AboutProjectPage.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/team" element={<TeamPage />} />
+              <Route path="/about" element={<AboutProjectPage />} />
               <Route
                 path="/dashboard"
                 element={

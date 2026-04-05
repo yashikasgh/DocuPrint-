@@ -12,6 +12,7 @@ import {
   FileBarChart,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
 import { authClient, isSupabaseConfigured, supabase } from "@/lib/supabase";
 
@@ -136,9 +137,14 @@ const IntroLanding = ({ onContinue }: { onContinue: () => void }) => {
               <h1 className="text-lg font-bold uppercase tracking-tight">Event Document Generator</h1>
             </div>
           </div>
-          <button onClick={onContinue} className="brutal-btn-primary hidden py-2 md:inline-flex">
-            Enter Experience
-          </button>
+          <div className="flex flex-col items-center gap-2 md:flex-row">
+            <Link to="/about" className="brutal-btn-outline hidden py-2 md:inline-flex">
+              About Project
+            </Link>
+            <button onClick={onContinue} className="brutal-btn-primary hidden py-2 md:inline-flex">
+              Enter Experience
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 py-8 md:py-12">

@@ -13,6 +13,7 @@ import {
   FileBarChart,
   UserRound,
   LogOut,
+  MessageSquare,
 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { authClient } from "@/lib/supabase";
@@ -81,6 +82,14 @@ const features = [
     color: "bg-primary",
     span: "col-span-2",
     href: "/generate/summary",
+  },
+  {
+    title: "Feedback",
+    description: "AI-generated feedback forms with QR code sharing for attendees",
+    icon: MessageSquare,
+    color: "bg-secondary",
+    span: "col-span-1",
+    href: "/generate/feedback",
   },
 ];
 

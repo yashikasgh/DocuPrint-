@@ -26,6 +26,8 @@ const PostEventSummaryPage = lazy(() => import("./pages/PostEventSummaryPage.tsx
 const ProfilePage = lazy(() => import("./pages/ProfilePage.tsx"));
 const TeamPage = lazy(() => import("./pages/TeamPage.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const FeedbackGeneratorPage = lazy(() => import("./pages/FeedbackGeneratorPage.tsx"));
+const FeedbackFormPage = lazy(() => import("./pages/FeedbackFormPage.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -170,6 +172,16 @@ const App = () => (
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/generate/feedback"
+                    element={
+                      <ProtectedRoute>
+                        <FeedbackGeneratorPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  {/* Public: no auth — attendees scan QR and land here */}
+                  <Route path="/feedback/:formId" element={<FeedbackFormPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

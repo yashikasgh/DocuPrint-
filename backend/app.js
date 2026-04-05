@@ -9,6 +9,8 @@ import { analyzeBudget, analyzeBudgetFolder, buildTimeline, compilePostEventSumm
 import { parseAttendanceFile, buildAttendancePdf } from "./services/attendance.js";
 import { readAttendanceStore, saveAttendanceRoster } from "./services/attendanceStore.js";
 import { generateFlyerConcept } from "./services/flyers.js";
+import { generateFeedbackQuestions } from "./services/feedback.js";
+import { writeFeedbackForm, readForm, readAllForms, saveSubmission, getSubmissions } from "./services/feedbackStore.js";
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -222,6 +224,81 @@ app.post("/api/timelines/generate", async (req, res, next) => {
 
 app.post("/api/post-event/summary", (req, res) => {
   res.json(compilePostEventSummary(req.body));
+});
+
+// ─── Feedback Form Routes ────────────────────────────────────────────────────
+
+// Generate AI feedback form and persist it
+app.post("/api/feedback/generate", async (req, res, next) => {
+  try {
+    const payload = req.body || {};
+    const generated = await generateFeedbackQuestions(payload);
+    const formId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const form = {
+      formId,
+      eventName: payload.eventName || "Untitled Event",
+      eventType: payload.eventType || "",
+      eventDate: payload.eventDate || "",
+      venue: payload.venue || "",
+      description: payload.description || "",
+      targetAudience: payload.targetAudience || "",
+      clubName: payload.clubName || "",
+      formTitle: generated.formTitle,
+      formSubtitle: generated.formSubtitle,
+      questions: generated.questions,
+      source: generated.source,
+      createdAt: new Date().toISOString(),
+    };
+    const saved = await writeFeedbackForm(form);
+    res.json({ form: saved });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Public: get form questions (no auth needed — used by attendees)
+app.get("/api/feedback/:formId", async (req, res, next) => {
+  try {
+    const form = await readForm(req.params.formId);
+    if (!form) return res.status(404).json({ message: "Feedback form not found." });
+    res.json({ form });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Public: submit attendee answers
+app.post("/api/feedback/:formId/submit", async (req, res, next) => {
+  try {
+    const answers = req.body?.answers;
+    if (!answers || typeof answers !== "object") {
+      return res.status(400).json({ message: "answers object is required." });
+    }
+    const submission = await saveSubmission(req.params.formId, answers);
+    res.json({ submission });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Organizer: get all responses for a form
+app.get("/api/feedback/:formId/responses", async (req, res, next) => {
+  try {
+    const responses = await getSubmissions(req.params.formId);
+    res.json({ responses });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Organizer: list all generated forms
+app.get("/api/feedback", async (_req, res, next) => {
+  try {
+    const forms = await readAllForms();
+    res.json({ forms });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.use((error, _req, res, _next) => {

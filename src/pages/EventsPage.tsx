@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -13,8 +13,18 @@ import {
   Trash2,
   X,
   Link2,
+  MessageSquare,
+  Sparkles,
+  QrCode,
+  Copy,
+  Check,
+  Download,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import QRCode from "qrcode";
 import {
   format,
   addMonths,
@@ -110,6 +120,79 @@ const EventsPage = () => {
   const [isLinkingDoc, setIsLinkingDoc] = useState(false);
   const [noteEdit, setNoteEdit] = useState("");
   const [isEditingNote, setIsEditingNote] = useState(false);
+
+  // Feedback state
+  type FeedbackState = "idle" | "loading" | "done" | "error";
+  const [feedbackState, setFeedbackState] = useState<FeedbackState>("idle");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackForm, setFeedbackForm] = useState<{
+    formId: string;
+    formTitle: string;
+    questions: { id: string; type: string; label: string }[];
+  } | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  // Reset feedback panel when switching events
+  useEffect(() => {
+    setFeedbackState("idle");
+    setFeedbackOpen(false);
+    setFeedbackForm(null);
+    setQrDataUrl("");
+  }, [selectedEvent?.id]);
+
+  const generateFeedback = async () => {
+    if (!selectedEvent) return;
+    setFeedbackState("loading");
+    setFeedbackOpen(true);
+    try {
+      const res = await fetch("http://localhost:8787/api/feedback/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventName: selectedEvent.name,
+          eventDate: selectedEvent.date,
+          venue: selectedEvent.venue,
+          description: selectedEvent.description,
+          eventType: "General",
+        }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      const form = data.form;
+      setFeedbackForm(form);
+      const url = `${window.location.origin}/feedback/${form.formId}`;
+      const qr = await QRCode.toDataURL(url, {
+        width: 200,
+        margin: 2,
+        color: { dark: "#000000", light: "#ffffff" },
+        errorCorrectionLevel: "M",
+      });
+      setQrDataUrl(qr);
+      setFeedbackState("done");
+    } catch {
+      setFeedbackState("error");
+    }
+  };
+
+  const feedbackPublicUrl = feedbackForm
+    ? `${window.location.origin}/feedback/${feedbackForm.formId}`
+    : "";
+
+  const handleCopyFeedbackLink = async () => {
+    if (!feedbackPublicUrl) return;
+    await navigator.clipboard.writeText(feedbackPublicUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadQr = () => {
+    if (!qrDataUrl || !feedbackForm) return;
+    const link = document.createElement("a");
+    link.download = `feedback-qr-${feedbackForm.formId}.png`;
+    link.href = qrDataUrl;
+    link.click();
+  };
 
   // Calendar logic
   const monthStart = startOfMonth(currentMonth);
@@ -481,6 +564,128 @@ const EventsPage = () => {
                                 + Attach File
                             </button>
                         )}
+                   </div>
+
+                   {/* ── Feedback Form Section ─────────────────────────── */}
+                   <div className="border-t-2 border-foreground pt-6">
+                     <div className="flex items-center justify-between mb-3">
+                       <h4 className="font-bold uppercase text-sm flex items-center gap-2">
+                         <MessageSquare className="w-4 h-4" /> Feedback Form
+                       </h4>
+                       {feedbackState === "done" && (
+                         <button
+                           onClick={() => setFeedbackOpen((p) => !p)}
+                           className="text-xs font-bold uppercase text-primary flex items-center gap-1 hover:underline"
+                         >
+                           {feedbackOpen ? <><ChevronUp className="w-3.5 h-3.5" /> Hide</> : <><ChevronDown className="w-3.5 h-3.5" /> Show</>}
+                         </button>
+                       )}
+                     </div>
+
+                     {/* Generate button — shown when idle or error */}
+                     {(feedbackState === "idle" || feedbackState === "error") && (
+                       <div className="space-y-2">
+                         {feedbackState === "error" && (
+                           <p className="text-destructive text-xs font-bold px-3 py-2 bg-destructive/10 brutal-border">
+                             Failed to generate. Make sure the backend is running.
+                           </p>
+                         )}
+                         <button
+                           id="event-card-generate-feedback"
+                           onClick={generateFeedback}
+                           className="brutal-btn-secondary w-full py-3 text-xs flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
+                         >
+                           <Sparkles className="w-4 h-4" />
+                           Generate Feedback Form + QR Code
+                         </button>
+                       </div>
+                     )}
+
+                     {/* Loading spinner */}
+                     {feedbackState === "loading" && (
+                       <motion.div
+                         initial={{ opacity: 0 }}
+                         animate={{ opacity: 1 }}
+                         className="brutal-border bg-muted/20 px-4 py-5 flex items-center gap-3"
+                       >
+                         <Loader2 className="w-5 h-5 animate-spin shrink-0" />
+                         <div>
+                           <p className="text-sm font-bold">AI is generating questions…</p>
+                           <p className="text-xs font-mono text-muted-foreground mt-0.5">Based on: {selectedEvent.name}</p>
+                         </div>
+                       </motion.div>
+                     )}
+
+                     {/* Done: QR + questions */}
+                     {feedbackState === "done" && feedbackForm && (
+                       <AnimatePresence>
+                         {feedbackOpen && (
+                           <motion.div
+                             initial={{ opacity: 0, height: 0 }}
+                             animate={{ opacity: 1, height: "auto" }}
+                             exit={{ opacity: 0, height: 0 }}
+                             className="overflow-hidden"
+                           >
+                             {/* QR Card */}
+                             <div className="brutal-border bg-foreground text-background p-4 flex gap-4 items-start mb-4">
+                               <div className="shrink-0">
+                                 {qrDataUrl ? (
+                                   <img src={qrDataUrl} alt="Feedback QR" className="w-24 h-24 bg-white brutal-border" />
+                                 ) : (
+                                   <div className="w-24 h-24 bg-background/10 brutal-border animate-pulse" />
+                                 )}
+                               </div>
+                               <div className="flex-1 min-w-0">
+                                 <p className="text-[10px] font-mono uppercase opacity-60 mb-1">Scan to submit feedback</p>
+                                 <p className="font-bold text-sm leading-snug">{feedbackForm.formTitle}</p>
+                                 <p className="font-mono text-[10px] opacity-50 mt-1 break-all">{feedbackPublicUrl}</p>
+                                 <div className="flex gap-2 mt-3 flex-wrap">
+                                   <button
+                                     onClick={handleCopyFeedbackLink}
+                                     className="flex items-center gap-1 text-[10px] font-bold uppercase bg-background text-foreground brutal-border px-2 py-1.5 hover:bg-secondary transition-colors"
+                                   >
+                                     {copied ? <><Check className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Copy Link</>}
+                                   </button>
+                                   <button
+                                     onClick={handleDownloadQr}
+                                     className="flex items-center gap-1 text-[10px] font-bold uppercase bg-background text-foreground brutal-border px-2 py-1.5 hover:bg-secondary transition-colors"
+                                   >
+                                     <Download className="w-3 h-3" /> Download QR
+                                   </button>
+                                   <a
+                                     href={feedbackPublicUrl}
+                                     target="_blank"
+                                     rel="noopener noreferrer"
+                                     className="flex items-center gap-1 text-[10px] font-bold uppercase bg-background text-foreground brutal-border px-2 py-1.5 hover:bg-secondary transition-colors"
+                                   >
+                                     <QrCode className="w-3 h-3" /> Open Form
+                                   </a>
+                                 </div>
+                               </div>
+                             </div>
+
+                             {/* Questions preview */}
+                             <div className="space-y-2">
+                               <p className="text-xs font-bold uppercase text-muted-foreground">{feedbackForm.questions.length} Questions Generated</p>
+                               {feedbackForm.questions.map((q, i) => (
+                                 <div key={q.id} className="flex items-start gap-2 brutal-border p-2.5 bg-muted/5">
+                                   <span className="w-5 h-5 bg-foreground text-background text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                                   <span className="text-xs leading-snug">{q.label}</span>
+                                   <span className="ml-auto text-[9px] font-mono bg-muted brutal-border px-1.5 py-0.5 uppercase shrink-0">{q.type}</span>
+                                 </div>
+                               ))}
+                             </div>
+
+                             <button
+                               onClick={() => { setFeedbackState("idle"); setFeedbackForm(null); setQrDataUrl(""); }}
+                               className="mt-3 text-xs font-bold text-muted-foreground hover:text-destructive underline"
+                             >
+                               Regenerate
+                             </button>
+                           </motion.div>
+                         )}
+                       </AnimatePresence>
+                     )}
                    </div>
                </div>
             </motion.div>

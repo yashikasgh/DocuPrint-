@@ -1,14 +1,5 @@
 {
-  "categories": [
-    "Fest",
-    "Seminar",
-    "Repair",
-    "Research",
-    "Infrastructure",
-    "Sports",
-    "Marketing",
-    "Hospitality"
-  ],
+  "categories": ["Fest", "Seminar", "Repair", "Research", "Infrastructure", "Sports", "Marketing", "Hospitality"],
   "records": [
     {
       "id": "alegria-2024",
@@ -64,10 +55,7 @@
           "expenseId": "EXP-003"
         }
       ],
-      "subtotal": 333988,
-      "taxTotal": 26720,
-      "discount": 15018,
-      "grandTotal": 345690
+      "subtotal": 333988, "taxTotal": 26720, "discount": 15018, "grandTotal": 345690
     },
     {
       "id": "seminar-2024",
@@ -123,10 +111,7 @@
           "expenseId": "EXP-006"
         }
       ],
-      "subtotal": 76400,
-      "taxTotal": 6112,
-      "discount": 2072,
-      "grandTotal": 80440
+      "subtotal": 76400, "taxTotal": 6112, "discount": 2072, "grandTotal": 80440
     },
     {
       "id": "repair-lab-2024",
@@ -168,10 +153,7 @@
           "expenseId": "EXP-011"
         }
       ],
-      "subtotal": 67000,
-      "taxTotal": 5360,
-      "discount": 0,
-      "grandTotal": 72360
+      "subtotal": 67000, "taxTotal": 5360, "discount": 0, "grandTotal": 72360
     },
     {
       "id": "research-grant-2024",
@@ -213,10 +195,7 @@
           "expenseId": "EXP-013"
         }
       ],
-      "subtotal": 66000,
-      "taxTotal": 5280,
-      "discount": 0,
-      "grandTotal": 71280
+      "subtotal": 66000, "taxTotal": 5280, "discount": 0, "grandTotal": 71280
     },
     {
       "id": "infra-2024",
@@ -258,10 +237,7 @@
           "expenseId": "EXP-015"
         }
       ],
-      "subtotal": 151000,
-      "taxTotal": 12080,
-      "discount": 0,
-      "grandTotal": 163080
+      "subtotal": 151000, "taxTotal": 12080, "discount": 0, "grandTotal": 163080
     },
     {
       "id": "sports-2024",
@@ -317,10 +293,7 @@
           "expenseId": "EXP-009"
         }
       ],
-      "subtotal": 138000,
-      "taxTotal": 11040,
-      "discount": 0,
-      "grandTotal": 149040
+      "subtotal": 138000, "taxTotal": 11040, "discount": 0, "grandTotal": 149040
     },
     {
       "id": "marketing-drive-2024",
@@ -362,10 +335,7 @@
           "expenseId": "EXP-017"
         }
       ],
-      "subtotal": 64000,
-      "taxTotal": 5120,
-      "discount": 0,
-      "grandTotal": 69120
+      "subtotal": 64000, "taxTotal": 5120, "discount": 0, "grandTotal": 69120
     },
     {
       "id": "hospitality-meet-2024",
@@ -407,10 +377,7 @@
           "expenseId": "EXP-019"
         }
       ],
-      "subtotal": 55250,
-      "taxTotal": 4420,
-      "discount": 0,
-      "grandTotal": 59670
+      "subtotal": 55250, "taxTotal": 4420, "discount": 0, "grandTotal": 59670
     }
   ]
 }

@@ -46,6 +46,17 @@ async function fetchWithFallback(
   );
 }
 
+export async function apiFetch(
+  path: string,
+  init: RequestInit = {}
+): Promise<Response> {
+  try {
+    return await fetchWithFallback(path, init);
+  } catch {
+    throw new Error("Backend not reachable. Start the API server and try again.");
+  }
+}
+
 async function requestJson<T>(
   path: string,
   options: JsonOptions = {}
@@ -53,7 +64,7 @@ async function requestJson<T>(
   let response: Response;
 
   try {
-    response = await fetchWithFallback(path, {
+    response = await apiFetch(path, {
       method: options.method || "GET",
       headers: {
         "Content-Type": "application/json",
@@ -145,7 +156,7 @@ export const api = {
 
     let response: Response;
     try {
-      response = await fetchWithFallback("/budget/analyze-csv", {
+      response = await apiFetch("/budget/analyze-csv", {
         method: "POST",
         body: formData,
       });
@@ -169,7 +180,7 @@ export const api = {
     let response: Response;
 
     try {
-      response = await fetchWithFallback("/attendance/parse", {
+      response = await apiFetch("/attendance/parse", {
         method: "POST",
         body: formData,
       });

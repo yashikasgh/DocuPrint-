@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import QRCode from "qrcode";
+import { apiFetch } from "@/lib/api";
 import {
   format,
   addMonths,
@@ -146,8 +147,7 @@ const EventsPage = () => {
     setFeedbackState("loading");
     setFeedbackOpen(true);
     try {
-      const BACKEND = import.meta.env.PROD ? "" : "http://localhost:8787";
-      const res = await fetch(`${BACKEND}/api/feedback/generate`, {
+      const res = await apiFetch("/feedback/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

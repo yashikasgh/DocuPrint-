@@ -264,7 +264,7 @@ const AboutProjectPage = () => {
       >
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 md:flex-row">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            Event Generator Project • PCE
+            This project was developed as a part of learning at PCE.
           </p>
           <a
             href="https://www.pce.ac.in/"
@@ -272,7 +272,7 @@ const AboutProjectPage = () => {
             rel="noreferrer"
             className="font-bold uppercase underline decoration-2 underline-offset-4"
           >
-            Visit PCE Website
+            PILLAI COLLEGE OF ENGINEERING WEBSITE
           </a>
         </div>
       </motion.footer>

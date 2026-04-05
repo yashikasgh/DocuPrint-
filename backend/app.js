@@ -9,7 +9,7 @@ import { analyzeBudget, analyzeBudgetFolder, buildTimeline, compilePostEventSumm
 import { parseAttendanceFile, buildAttendancePdf } from "./services/attendance.js";
 import { readAttendanceStore, saveAttendanceRoster } from "./services/attendanceStore.js";
 import { generateFlyerConcept } from "./services/flyers.js";
-import { generateFeedbackQuestions } from "./services/feedback.js";
+import { generateFeedbackQuestions, normalizeFeedbackForm } from "./services/feedback.js";
 import { writeFeedbackForm, readForm, readAllForms, saveSubmission, getSubmissions } from "./services/feedbackStore.js";
 
 const app = express();
@@ -243,9 +243,7 @@ app.post("/api/feedback/generate", async (req, res, next) => {
       description: payload.description || "",
       targetAudience: payload.targetAudience || "",
       clubName: payload.clubName || "",
-      formTitle: generated.formTitle,
-      formSubtitle: generated.formSubtitle,
-      questions: generated.questions,
+      ...normalizeFeedbackForm(generated),
       source: generated.source,
       createdAt: new Date().toISOString(),
     };
@@ -284,6 +282,8 @@ app.post("/api/feedback/:formId/submit", async (req, res, next) => {
 // Organizer: get all responses for a form
 app.get("/api/feedback/:formId/responses", async (req, res, next) => {
   try {
+    const form = await readForm(req.params.formId);
+    if (!form) return res.status(404).json({ message: "Feedback form not found." });
     const responses = await getSubmissions(req.params.formId);
     res.json({ responses });
   } catch (error) {

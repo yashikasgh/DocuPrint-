@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -32,6 +32,164 @@ const FeedbackFormPage = lazy(() => import("./pages/FeedbackFormPage.tsx"));
 
 const queryClient = new QueryClient();
 
+const AppLayout = () => {
+  const location = useLocation();
+  const usesPageSpecificFooter = location.pathname === "/about";
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <div className="flex-1">
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center font-mono text-sm text-muted-foreground">Loading...</div>}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/team" element={<TeamPage />} />
+            <Route path="/about" element={<AboutProjectPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/proposal"
+              element={
+                <ProtectedRoute>
+                  <ProposalGenerator />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/flyer"
+              element={
+                <ProtectedRoute>
+                  <FlyerGenerator />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/attendance"
+              element={
+                <ProtectedRoute>
+                  <AttendancePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/report"
+              element={
+                <ProtectedRoute>
+                  <ReportGenerator />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/budget"
+              element={
+                <ProtectedRoute>
+                  <BudgetDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/budget/create"
+              element={
+                <ProtectedRoute>
+                  <BudgetPlannerPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/budget/history"
+              element={
+                <ProtectedRoute>
+                  <PreviousBudgetsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/budget/categories"
+              element={
+                <ProtectedRoute>
+                  <BudgetCategoriesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/budget/analysis"
+              element={
+                <ProtectedRoute>
+                  <BudgetAnalysisPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/budget/estimation"
+              element={
+                <ProtectedRoute>
+                  <BudgetEstimationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/budget/reports"
+              element={
+                <ProtectedRoute>
+                  <BudgetReportsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/timeline"
+              element={
+                <ProtectedRoute>
+                  <TimelinePlannerPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/summary"
+              element={
+                <ProtectedRoute>
+                  <PostEventSummaryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/events"
+              element={
+                <ProtectedRoute>
+                  <EventsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/generate/feedback"
+              element={
+                <ProtectedRoute>
+                  <FeedbackGeneratorPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/feedback/:formId" element={<FeedbackFormPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </div>
+      {!usesPageSpecificFooter ? <Footer /> : null}
+    </div>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -39,151 +197,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Suspense fallback={<div className="flex min-h-screen items-center justify-center font-mono text-sm text-muted-foreground">Loading...</div>}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/team" element={<TeamPage />} />
-              <Route path="/about" element={<AboutProjectPage />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/proposal"
-                element={
-                  <ProtectedRoute>
-                    <ProposalGenerator />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/flyer"
-                element={
-                  <ProtectedRoute>
-                    <FlyerGenerator />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/attendance"
-                element={
-                  <ProtectedRoute>
-                    <AttendancePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/report"
-                element={
-                  <ProtectedRoute>
-                    <ReportGenerator />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/budget"
-                element={
-                  <ProtectedRoute>
-                    <BudgetDashboardPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/budget/create"
-                element={
-                  <ProtectedRoute>
-                    <BudgetPlannerPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/budget/history"
-                element={
-                  <ProtectedRoute>
-                    <PreviousBudgetsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/budget/categories"
-                element={
-                  <ProtectedRoute>
-                    <BudgetCategoriesPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/budget/analysis"
-                element={
-                  <ProtectedRoute>
-                    <BudgetAnalysisPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/budget/estimation"
-                element={
-                  <ProtectedRoute>
-                    <BudgetEstimationPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/budget/reports"
-                element={
-                  <ProtectedRoute>
-                    <BudgetReportsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/timeline"
-                element={
-                  <ProtectedRoute>
-                    <TimelinePlannerPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/summary"
-                element={
-                  <ProtectedRoute>
-                    <PostEventSummaryPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/events"
-                element={
-                  <ProtectedRoute>
-                    <EventsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/generate/feedback"
-                element={
-                  <ProtectedRoute>
-                    <FeedbackGeneratorPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/feedback/:formId" element={<FeedbackFormPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+          <AppLayout />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

@@ -61,17 +61,32 @@ export const readAllForms = async () => {
  */
 export const saveSubmission = async (formId, answers) => {
   const store = await readStore();
-  if (!store.forms[formId]) {
+  const form = store.forms[formId];
+  if (!form) {
     throw new Error(`Form ${formId} not found`);
   }
   if (!store.submissions[formId]) {
     store.submissions[formId] = [];
   }
+  const sanitizedAnswers = Object.fromEntries(
+    Object.entries(answers || {}).filter(([key]) => form.questions.some((question) => question.id === key))
+  );
+  const missingRequired = form.questions
+    .filter((question) => question.required)
+    .filter((question) => {
+      const value = sanitizedAnswers[question.id];
+      return value === undefined || value === null || value === "";
+    });
+
+  if (missingRequired.length > 0) {
+    throw new Error(`Missing required answers for: ${missingRequired.map((question) => question.label).join(", ")}`);
+  }
+
   const submission = {
     submissionId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     formId,
     submittedAt: new Date().toISOString(),
-    answers,
+    answers: sanitizedAnswers,
   };
   store.submissions[formId].push(submission);
   await writeStore(store);

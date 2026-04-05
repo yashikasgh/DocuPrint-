@@ -70,6 +70,7 @@ export const authModeLabel = isSupabaseConfigured ? "Supabase authentication" : 
 
 const ACCOUNTS_STORAGE_KEY = "docuprint.auth.accounts";
 const SESSION_STORAGE_KEY = "docuprint.auth.session";
+const AUTH_MIGRATION_STORAGE_KEY = "docuprint.auth.migrated-to-supabase";
 const authListeners = new Set<AuthStateCallback>();
 
 const readJson = <T>(key: string, fallback: T): T => {
@@ -103,6 +104,22 @@ const clearJson = (key: string) => {
   }
 
   window.localStorage.removeItem(key);
+};
+
+const migrateLegacyLocalAuth = () => {
+  if (typeof window === "undefined" || !isSupabaseConfigured) {
+    return;
+  }
+
+  const alreadyMigrated = window.localStorage.getItem(AUTH_MIGRATION_STORAGE_KEY);
+  if (alreadyMigrated === "true") {
+    return;
+  }
+
+  // Remove legacy browser-only auth data so Supabase sessions are authoritative.
+  clearJson(ACCOUNTS_STORAGE_KEY);
+  clearJson(SESSION_STORAGE_KEY);
+  window.localStorage.setItem(AUTH_MIGRATION_STORAGE_KEY, "true");
 };
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
@@ -304,6 +321,8 @@ if (!isSupabaseConfigured) {
   );
 }
 
+migrateLegacyLocalAuth();
+
 const getAuthClient = (): AuthClient => {
   if (supabase) {
     return {
@@ -314,6 +333,18 @@ const getAuthClient = (): AuthClient => {
       signInWithPassword: (payload) => supabase.auth.signInWithPassword(payload),
       signOut: () => supabase.auth.signOut(),
       updateUser: (payload) => supabase.auth.updateUser(payload),
+=======
+      exchangeCodeForSession: (authCode) => supabase.auth.exchangeCodeForSession(authCode) as AuthResult<{ session: AuthSession | null }>,
+      getSession: () => supabase.auth.getSession() as AuthResult<{ session: AuthSession | null }>,
+      onAuthStateChange: (callback) =>
+        supabase.auth.onAuthStateChange((event, session) => {
+          callback(event, session as AuthSession | null);
+        }),
+      signUp: (payload) => supabase.auth.signUp(payload) as AuthResult<{ session: AuthSession | null }>,
+      signInWithPassword: (payload) =>
+        supabase.auth.signInWithPassword(payload) as AuthResult<{ session: AuthSession | null }>,
+      signOut: () => supabase.auth.signOut() as AuthResult<Record<string, never>>,
+      updateUser: (payload) => supabase.auth.updateUser(payload) as AuthResult<{ user: AuthUser | null }>,
       signInAsGuest: localAuth.signInAsGuest,
     };
   }

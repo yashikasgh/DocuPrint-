@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
@@ -15,7 +15,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
-import { authClient, isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { authClient, isSupabaseConfigured } from "@/lib/supabase";
+import { teamMembers } from "@/lib/siteContent";
 
 type Phase = "intro" | "printer" | "form";
 
@@ -56,6 +57,7 @@ const teamMembers = [
 
 const footerLink = "https://www.pce.ac.in/";
 
+=======
 const formatAuthError = (message: string) => {
   const normalized = String(message || "").toLowerCase();
 
@@ -86,26 +88,6 @@ const introMotion = {
   hidden: { opacity: 0, y: 22 },
   visible: { opacity: 1, y: 0 },
 };
-
-const PageFooter = memo(() => (
-  <footer className="border-t-2 border-foreground/15 px-6 py-6 md:px-10">
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-        Developed as part of learning at PCE.
-      </p>
-      <a
-        href={footerLink}
-        target="_blank"
-        rel="noreferrer"
-        className="font-bold uppercase underline decoration-2 underline-offset-4"
-      >
-        Visit PCE Website
-      </a>
-    </div>
-  </footer>
-));
-
-PageFooter.displayName = "PageFooter";
 
 const IntroLanding = ({ onContinue }: { onContinue: () => void }) => {
   const reduceMotion = useReducedMotion();
@@ -233,13 +215,9 @@ const IntroLanding = ({ onContinue }: { onContinue: () => void }) => {
                 </div>
               ))}
             </div>
-            <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              Replace the placeholder names above with your final team member names and exact roles.
-            </p>
           </section>
         </main>
       </div>
-      <PageFooter />
     </motion.div>
   );
 };
@@ -324,12 +302,6 @@ const SignUpForm = ({ onBackToIntro }: { onBackToIntro: () => void }) => {
       return;
     }
 
-    if (!isSupabaseConfigured) {
-      setSubmitting(false);
-      setStatus("Authentication is not configured. Add real VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY values in .env, then restart the app.");
-      return;
-    }
-
     if (mode === "signup" && safePassword.length < 8) {
       setSubmitting(false);
       setStatus("Use a password with at least 8 characters.");
@@ -338,7 +310,7 @@ const SignUpForm = ({ onBackToIntro }: { onBackToIntro: () => void }) => {
 
     try {
       if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await authClient.signUp({
           email: safeEmail,
           password: safePassword,
           options: {
@@ -360,12 +332,10 @@ const SignUpForm = ({ onBackToIntro }: { onBackToIntro: () => void }) => {
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await authClient.signInWithPassword({
         email: safeEmail,
         password: safePassword,
       });
-
-      console.log("Sign in error:", error); // Add this for debugging
 
       setSubmitting(false);
       if (error) {
@@ -376,7 +346,11 @@ const SignUpForm = ({ onBackToIntro }: { onBackToIntro: () => void }) => {
       navigate("/dashboard");
     } catch {
       setSubmitting(false);
-      setStatus("Unable to reach Supabase. Verify internet connection and Supabase URL/key values in .env.");
+      setStatus(
+        isSupabaseConfigured
+          ? "Unable to reach Supabase. Verify internet connection and Supabase URL/key values in .env.local."
+          : "Local authentication could not be started. Refresh the page and try again."
+      );
     }
   };
 

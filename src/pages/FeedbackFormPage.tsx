@@ -10,6 +10,7 @@ import {
   Send,
   MessageSquare,
 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Question {
@@ -37,6 +38,7 @@ type Answers = Record<string, string | number>;
 // ─── Sub-components ───────────────────────────────────────────────────────────
 const BACKEND = import.meta.env.MODE === "production" ? "" : "http://localhost:8787";
 
+=======
 const StarRating = ({
   questionId,
   value,
@@ -86,12 +88,13 @@ const FeedbackFormPage = () => {
   const [answers, setAnswers] = useState<Answers>({});
   const [submitState, setSubmitState] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     if (!formId) return;
     (async () => {
       try {
-        const res = await fetch(`${BACKEND}/api/feedback/${formId}`);
+        const res = await apiFetch(`/feedback/${formId}`);
         if (!res.ok) throw new Error("Not found");
         const data = await res.json();
         setFormData(data.form);
@@ -111,6 +114,7 @@ const FeedbackFormPage = () => {
 
   const handleSubmit = async () => {
     if (!formData) return;
+    setSubmitError("");
 
     // Validate required fields
     const errors: Record<string, boolean> = {};
@@ -129,14 +133,18 @@ const FeedbackFormPage = () => {
 
     setSubmitState("submitting");
     try {
-      const res = await fetch(`${BACKEND}/api/feedback/${formId}/submit`, {
+      const res = await apiFetch(`/feedback/${formId}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers }),
       });
-      if (!res.ok) throw new Error("Submission failed");
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.message || "Submission failed");
+      }
       setSubmitState("done");
-    } catch {
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Submission failed");
       setSubmitState("error");
     }
   };
@@ -315,7 +323,7 @@ const FeedbackFormPage = () => {
         >
           {submitState === "error" && (
             <p className="text-destructive text-xs font-bold mb-3 px-3 py-2 bg-destructive/10 brutal-border">
-              Submission failed. Please try again.
+              {submitError || "Submission failed. Please try again."}
             </p>
           )}
           <button

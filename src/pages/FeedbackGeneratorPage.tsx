@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import QRCode from "qrcode";
+import { apiFetch } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Question {
@@ -42,6 +43,7 @@ interface GeneratedForm {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const BACKEND = import.meta.env.MODE === "production" ? "" : "http://localhost:8787";
 
+=======
 const questionTypeIcon = (type: Question["type"]) => {
   if (type === "rating") return <Star className="w-3.5 h-3.5" />;
   if (type === "text") return <AlignLeft className="w-3.5 h-3.5" />;
@@ -74,8 +76,6 @@ const FeedbackGeneratorPage = () => {
   const [error, setError] = useState("");
   const [responseCount, setResponseCount] = useState(0);
 
-  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
-
   const publicUrl = generated
     ? `${window.location.origin}/feedback/${generated.formId}`
     : "";
@@ -83,9 +83,10 @@ const FeedbackGeneratorPage = () => {
   // Poll response count
   useEffect(() => {
     if (!generated) return;
+    setResponseCount(0);
     const poll = async () => {
       try {
-        const res = await fetch(`${BACKEND}/api/feedback/${generated.formId}/responses`);
+        const res = await apiFetch(`/feedback/${generated.formId}/responses`);
         const data = await res.json();
         setResponseCount(data.responses?.length ?? 0);
       } catch {
@@ -99,13 +100,16 @@ const FeedbackGeneratorPage = () => {
 
   // Generate QR when form/url changes
   useEffect(() => {
-    if (!publicUrl) return;
+    if (!publicUrl) {
+      setQrDataUrl("");
+      return;
+    }
     QRCode.toDataURL(publicUrl, {
       width: 280,
       margin: 2,
       color: { dark: "#000000", light: "#ffffff" },
       errorCorrectionLevel: "M",
-    }).then(setQrDataUrl);
+    }).then(setQrDataUrl).catch(() => setQrDataUrl(""));
   }, [publicUrl]);
 
   const handleGenerate = async () => {
@@ -114,27 +118,35 @@ const FeedbackGeneratorPage = () => {
       return;
     }
     setError("");
+    setCopied(false);
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND}/api/feedback/generate`, {
+      const res = await apiFetch("/feedback/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error("Generation failed");
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.message || "Generation failed");
+      }
       const data = await res.json();
       setGenerated(data.form);
-    } catch {
-      setError("Failed to generate feedback form. Make sure the backend is running.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to generate feedback form. Make sure the backend is running.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(publicUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Unable to copy the feedback link from this browser.");
+    }
   };
 
   const handleDownloadQr = () => {

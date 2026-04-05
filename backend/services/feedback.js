@@ -3,6 +3,17 @@ import { config } from "../config.js";
 
 const GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions";
 
+const compactProviderError = (error) =>
+  String(error instanceof Error ? error.message : error || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 240);
+
+const logProviderFailure = (provider, error) => {
+  const message = compactProviderError(error);
+  console.warn(message ? `[Feedback] ${provider} failed: ${message}` : `[Feedback] ${provider} failed.`);
+};
+
 /**
  * Build the AI prompt from event context.
  */
@@ -68,13 +79,68 @@ const extractJson = (text = "") => {
   }
 };
 
+const normalizeQuestion = (question, index) => {
+  const type = ["rating", "text", "choice"].includes(question?.type) ? question.type : "text";
+  const label = String(question?.label || "").trim();
+
+  if (!label) {
+    return null;
+  }
+
+  const normalized = {
+    id: String(question?.id || `q${index + 1}`),
+    type,
+    label,
+    required: question?.required !== false,
+  };
+
+  if (type === "text") {
+    return {
+      ...normalized,
+      placeholder: String(question?.placeholder || "Share your thoughts...").trim(),
+    };
+  }
+
+  if (type === "choice") {
+    const options = Array.isArray(question?.options)
+      ? question.options.map((option) => String(option || "").trim()).filter(Boolean).slice(0, 4)
+      : [];
+
+    return {
+      ...normalized,
+      options: options.length >= 2 ? options : ["Excellent", "Good", "Average", "Poor"],
+    };
+  }
+
+  return normalized;
+};
+
+export const normalizeFeedbackForm = (payload = {}) => {
+  const fallback = buildFallbackQuestions(payload);
+  const rawQuestions = Array.isArray(payload?.questions) ? payload.questions : [];
+  const normalizedQuestions = rawQuestions
+    .map((question, index) => normalizeQuestion(question, index))
+    .filter(Boolean)
+    .slice(0, 10);
+
+  if (normalizedQuestions.length < 5) {
+    return fallback;
+  }
+
+  return {
+    formTitle: String(payload?.formTitle || fallback.formTitle).trim() || fallback.formTitle,
+    formSubtitle: String(payload?.formSubtitle || fallback.formSubtitle).trim() || fallback.formSubtitle,
+    questions: normalizedQuestions,
+  };
+};
+
 /**
  * Generic fallback questions when AI is unavailable.
  */
 const buildFallbackQuestions = (payload) => {
   const eventName = payload.eventName || "this event";
   return {
-    formTitle: `${eventName} — Feedback Form`,
+    formTitle: `${eventName} - Feedback Form`,
     formSubtitle: `We value your feedback to help us improve future events.`,
     questions: [
       {
@@ -128,28 +194,12 @@ const buildFallbackQuestions = (payload) => {
 };
 
 /**
- * Try Gemini first, fall back to Groq, then use template.
+ * Prefer Groq, fall back to Gemini, then use template.
  */
 export const generateFeedbackQuestions = async (payload) => {
   const prompt = buildPrompt(payload);
 
-  // 1. Try Gemini
-  if (config.geminiApiKey) {
-    try {
-      const client = new GoogleGenerativeAI(config.geminiApiKey);
-      const model = client.getGenerativeModel({ model: "gemini-2.0-flash" });
-      const result = await model.generateContent([{ text: prompt }]);
-      const text = result.response.text().trim();
-      const parsed = extractJson(text);
-      if (parsed?.questions?.length >= 5) {
-        return { ...parsed, source: "gemini" };
-      }
-    } catch (err) {
-      console.warn("[Feedback] Gemini failed:", err.message);
-    }
-  }
-
-  // 2. Try Groq
+  // 1. Try Groq first to avoid Gemini free-tier quota blocks during demos.
   if (config.groqApiKey) {
     try {
       const response = await fetch(GROQ_CHAT_COMPLETIONS_URL, {
@@ -170,11 +220,27 @@ export const generateFeedbackQuestions = async (payload) => {
         const text = data?.choices?.[0]?.message?.content || "";
         const parsed = extractJson(text);
         if (parsed?.questions?.length >= 5) {
-          return { ...parsed, source: "groq" };
+          return { ...normalizeFeedbackForm(parsed), source: "groq" };
         }
       }
     } catch (err) {
-      console.warn("[Feedback] Groq failed:", err.message);
+      logProviderFailure("Groq", err);
+    }
+  }
+
+  // 2. Try Gemini next.
+  if (config.geminiApiKey) {
+    try {
+      const client = new GoogleGenerativeAI(config.geminiApiKey);
+      const model = client.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const result = await model.generateContent([{ text: prompt }]);
+      const text = result.response.text().trim();
+      const parsed = extractJson(text);
+      if (parsed?.questions?.length >= 5) {
+        return { ...normalizeFeedbackForm(parsed), source: "gemini" };
+      }
+    } catch (err) {
+      logProviderFailure("Gemini", err);
     }
   }
 

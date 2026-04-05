@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, Rocket } from "lucide-react";
 import { Link } from "react-router-dom";
-import { footerLink, teamMembers } from "@/lib/siteContent";
+import { teamMembers } from "@/lib/siteContent";
 
 const TeamPage = () => {
   return (
@@ -54,22 +54,6 @@ const TeamPage = () => {
           </div>
         </main>
       </div>
-
-      <footer className="border-t-2 border-foreground/15 px-6 py-6 md:px-10">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            Developed as part of learning at PCE.
-          </p>
-          <a
-            href={footerLink}
-            target="_blank"
-            rel="noreferrer"
-            className="font-bold uppercase underline decoration-2 underline-offset-4"
-          >
-            Visit PCE Website
-          </a>
-        </div>
-      </footer>
     </div>
   );
 };

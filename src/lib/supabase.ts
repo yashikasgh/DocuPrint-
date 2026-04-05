@@ -326,24 +326,41 @@ migrateLegacyLocalAuth();
 const getAuthClient = (): AuthClient => {
   if (supabase) {
     return {
-      exchangeCodeForSession: (authCode: string) => supabase.auth.exchangeCodeForSession(authCode),
-      getSession: () => supabase.auth.getSession(),
-      onAuthStateChange: (callback) => supabase.auth.onAuthStateChange(callback),
-      signUp: (payload) => supabase.auth.signUp(payload),
-      signInWithPassword: (payload) => supabase.auth.signInWithPassword(payload),
-      signOut: () => supabase.auth.signOut(),
-      updateUser: (payload) => supabase.auth.updateUser(payload),
-=======
       exchangeCodeForSession: (authCode) => supabase.auth.exchangeCodeForSession(authCode) as AuthResult<{ session: AuthSession | null }>,
-      getSession: () => supabase.auth.getSession() as AuthResult<{ session: AuthSession | null }>,
-      onAuthStateChange: (callback) =>
-        supabase.auth.onAuthStateChange((event, session) => {
+      getSession: async () => {
+        const guestSession = getStoredSession();
+        if (guestSession?.user?.id === "guest-user") {
+          return { data: { session: guestSession }, error: null };
+        }
+
+        return supabase.auth.getSession() as AuthResult<{ session: AuthSession | null }>;
+      },
+      onAuthStateChange: (callback) => {
+        const supabaseSubscription = supabase.auth.onAuthStateChange((event, session) => {
           callback(event, session as AuthSession | null);
-        }),
+        });
+        const localSubscription = localAuth.onAuthStateChange(callback);
+
+        return {
+          data: {
+            subscription: {
+              unsubscribe: () => {
+                supabaseSubscription.data.subscription.unsubscribe();
+                localSubscription.data.subscription.unsubscribe();
+              },
+            },
+          },
+        };
+      },
       signUp: (payload) => supabase.auth.signUp(payload) as AuthResult<{ session: AuthSession | null }>,
       signInWithPassword: (payload) =>
         supabase.auth.signInWithPassword(payload) as AuthResult<{ session: AuthSession | null }>,
-      signOut: () => supabase.auth.signOut() as AuthResult<Record<string, never>>,
+      signOut: async () => {
+        saveStoredSession(null);
+        const result = await supabase.auth.signOut() as AuthResult<Record<string, never>>;
+        emitAuthState("SIGNED_OUT", null);
+        return result;
+      },
       updateUser: (payload) => supabase.auth.updateUser(payload) as AuthResult<{ user: AuthUser | null }>,
       signInAsGuest: localAuth.signInAsGuest,
     };

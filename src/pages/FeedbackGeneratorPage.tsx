@@ -41,9 +41,6 @@ interface GeneratedForm {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const BACKEND = import.meta.env.MODE === "production" ? "" : "http://localhost:8787";
-
-=======
 const questionTypeIcon = (type: Question["type"]) => {
   if (type === "rating") return <Star className="w-3.5 h-3.5" />;
   if (type === "text") return <AlignLeft className="w-3.5 h-3.5" />;

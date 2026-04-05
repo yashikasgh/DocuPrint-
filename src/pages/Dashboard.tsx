@@ -14,6 +14,7 @@ import {
   UserRound,
   LogOut,
   MessageSquare,
+  CalendarCheck,
 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { authClient } from "@/lib/supabase";
@@ -132,9 +133,13 @@ const Dashboard = () => {
         transition={{ duration: 0.35 }}
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center bg-foreground brutal-border">
-            <Sparkles className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
-          </div>
+          <motion.div
+            className="flex h-10 w-10 items-center justify-center bg-foreground brutal-border cursor-pointer"
+            whileHover={{ scale: 1.08 }}
+            transition={{ duration: 0.2 }}
+          >
+            <CalendarCheck className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
+          </motion.div>
           <div>
             <h1 className="text-2xl font-bold uppercase tracking-tight">DocuPrint</h1>
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">Event Workspace</p>

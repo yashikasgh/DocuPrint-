@@ -432,6 +432,18 @@
       "source": "template",
       "createdAt": "2026-04-05T15:34:57.649Z"
     },
+    "1775423692574-wrckv7": {
+      "formId": "1775423692574-wrckv7",
+      "eventName": "Sneha Yadav",
+      "eventType": "General",
+      "eventDate": "2026-04-07",
+      "venue": "asd",
+      "description": "",
+      "targetAudience": "Students and faculty",
+      "clubName": "csi",
+      "formTitle": "Sneha Yadav Event Feedback Form",
+      "formSubtitle": "Share your thoughts on the Sneha Yadav event held on 2026-04-07 at asd, organized by csi",
+=======
     "1775420665532-hw7ro1": {
       "formId": "1775420665532-hw7ro1",
       "eventName": "Test Event",
@@ -447,11 +459,18 @@
         {
           "id": "q1",
           "type": "rating",
+          "label": "How would you rate the overall quality of the Sneha Yadav event?",
+=======
           "label": "How would you rate the overall quality of the workshop?",
           "required": true
         },
         {
           "id": "q2",
+          "type": "text",
+          "label": "What were the most interesting or engaging aspects of the event for you?",
+          "placeholder": "Share your thoughts...",
+          "required": false
+=======
           "type": "rating",
           "label": "How would you rate the hands-on activities and interactive elements of the event?",
           "required": true
@@ -459,11 +478,21 @@
         {
           "id": "q3",
           "type": "rating",
+          "label": "How would you rate the relevance of the event content to your interests as a student or faculty member?",
+=======
           "label": "How would you rate the effectiveness of the event in achieving its learning objectives?",
           "required": true
         },
         {
           "id": "q4",
+          "type": "choice",
+          "label": "How did you hear about the Sneha Yadav event?",
+          "options": [
+            "Social media",
+            "College notice board",
+            "Email from csi",
+            "Friend/colleague"
+=======
           "type": "text",
           "label": "What did you find most valuable or informative about the workshop content?",
           "placeholder": "Share your thoughts...",
@@ -489,6 +518,35 @@
           "required": false
         },
         {
+          "id": "q5",
+          "type": "rating",
+          "label": "How would you rate the organization and logistics of the event (e.g., venue, timing, registration)?",
+          "required": true
+        },
+        {
+          "id": "q6",
+          "type": "text",
+          "label": "Do you have any suggestions for improving future events organized by csi?",
+          "placeholder": "Share your ideas...",
+          "required": false
+        },
+        {
+          "id": "q7",
+          "type": "rating",
+          "label": "How likely are you to attend similar events organized by csi in the future?",
+          "required": true
+        },
+        {
+          "id": "q8",
+          "type": "text",
+          "label": "Is there anything that you would like to see changed or improved for future events, such as topics, formats, or speakers?",
+          "placeholder": "Share your thoughts...",
+          "required": false
+        }
+      ],
+      "source": "groq",
+      "createdAt": "2026-04-05T21:14:52.574Z"
+=======
           "id": "q7",
           "type": "rating",
           "label": "How would you rate the support and guidance provided by the PCE Club organizers?",
@@ -703,6 +761,8 @@
     ],
     "1775403046898-q04zlz": [],
     "1775403297649-rtf1ne": [],
+    "1775423692574-wrckv7": []
+=======
     "1775420665532-hw7ro1": [
       {
         "submissionId": "1775420665711-qjjwko",

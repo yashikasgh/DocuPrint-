@@ -326,6 +326,14 @@ migrateLegacyLocalAuth();
 const getAuthClient = (): AuthClient => {
   if (supabase) {
     return {
+      exchangeCodeForSession: (authCode: string) => supabase.auth.exchangeCodeForSession(authCode),
+      getSession: () => supabase.auth.getSession(),
+      onAuthStateChange: (callback) => supabase.auth.onAuthStateChange(callback),
+      signUp: (payload) => supabase.auth.signUp(payload),
+      signInWithPassword: (payload) => supabase.auth.signInWithPassword(payload),
+      signOut: () => supabase.auth.signOut(),
+      updateUser: (payload) => supabase.auth.updateUser(payload),
+=======
       exchangeCodeForSession: (authCode) => supabase.auth.exchangeCodeForSession(authCode) as AuthResult<{ session: AuthSession | null }>,
       getSession: () => supabase.auth.getSession() as AuthResult<{ session: AuthSession | null }>,
       onAuthStateChange: (callback) =>

@@ -72,35 +72,42 @@ export const buildFlyerPrompt = (payload) => {
   const theme = themes.includes(payload.theme) ? payload.theme : themes[0];
   const style = payload.style || "Minimal Modern";
   const collegeName = normalizePromptField(payload.collegeName || "Pillai College of Engineering", 120);
-  const eventTitle = normalizePromptField(payload.eventTitle || "College event");
+  const eventTitle = normalizePromptField(payload.eventTitle || "Professional College Event", 140);
   const clubName = normalizePromptField(payload.clubName || "Student club", 120);
   const venue = normalizePromptField(payload.venue || "College campus", 120);
   const collegeLogoPath = normalizePromptField(payload.collegeLogoPath || "", 180);
   const clubLogoPath = normalizePromptField(payload.clubLogoPath || "", 180);
 
   return `
-Generate only the BACKGROUND artwork for a vertical college event poster (2:3 aspect ratio).
+Generate ONLY the BACKGROUND artwork for a vertical college event poster (2:3 aspect ratio, 1024x1536 pixels).
 Theme: ${theme}.
 Style direction: ${style}.
 Event focus: ${eventTitle} by ${clubName} at ${venue} in ${collegeName}.
 ${themeKeywords[theme] || ""}.
 ${styleKeywords[style] || ""}.
-Follow this composition blueprint used by the app layout:
-- Keep a calm bright top strip and reserve top-left and top-right circular logo safe zones.
-- Keep an upper-middle clean headline-safe area for a large event title overlay.
-- Keep a lower-middle clean rectangular safe zone for a translucent details card overlay.
-- Keep the bottom strip clean for date, venue, and contact footer text overlay.
-Concentrate richer visual detail mostly on the right side and lower-right corner so the left and center remain readable.
-Brand assets to accommodate in composition: ${collegeLogoPath || "college logo"} and ${clubLogoPath || "club logo"}.
-Keep the center area visually rich but not cluttered so title and details overlay remain highly readable.
-Visual cues to include: abstract futuristic technical graphics, circuit traces, polygon meshes, light data-flow lines, subtle neon accents.
-Bright, high-key lighting with rich visual depth.
-Keep center and top-middle areas readable for headline text overlays.
-Use cinematic composition, premium quality, sharp details, and print-ready composition.
-No text, no letters, no typography, no numbers, no logos, no watermark, no random characters, no gibberish.
-No signs, no posters, no banners, no UI text, no interface panels, no infographics.
-No people, no faces, no laptop screens, no monitors, no keyboards, no paper documents.
-Avoid any object that typically carries readable text.
+
+Composition blueprint for overlay compatibility:
+- Keep bright, clean top strip with read-safe zones for circular logos (top-left and top-right)
+- Keep upper-middle clean headline-safe area for large event title overlay
+- Keep lower-middle clean rectangular safe zone for translucent white details card overlay
+- Keep bottom strip clean and readable for date, venue, contact footer text overlay
+- Concentrate richer visual detail on the right side and lower-right corner
+- Keep left and center readable for headline and details overlays
+
+Visual direction:
+- Brand assets to accommodate: ${collegeLogoPath || "college logo"} and ${clubLogoPath || "club logo"}
+- Abstract futuristic technical graphics, circuit traces, polygon meshes, light data-flow lines, subtle neon accents
+- Bright, high-key lighting with rich visual depth and cinematic composition
+- Premium quality, sharp details, print-ready composition
+
+STRICT REQUIREMENTS:
+- No text, letters, numbers, typography, or readable words in the background image
+- No logos, emblems, badges, seals, watermarks
+- No signs, posters, banners, UI text, interface panels, infographics
+- No people, faces, laptop screens, monitors, keyboards, documents
+- No objects that typically carry readable text
+- No random characters, symbols, or gibberish
+- Pure visual background only - app will overlay its own text and logos
 `.trim();
 };
 
@@ -109,15 +116,15 @@ const buildFullFlyerPrompt = (payload) => {
   const style = payload.style || "Minimal Modern";
   const collegeName = normalizePromptField(payload.collegeName || "Pillai College of Engineering", 120);
   const clubName = normalizePromptField(payload.clubName || "Club Name", 120);
-  const eventTitle = normalizePromptField(payload.eventTitle || "Event Title", 140);
-  const date = normalizePromptField(payload.date || "Not specified", 80);
-  const time = normalizePromptField(payload.time || "Not specified", 80);
-  const venue = normalizePromptField(payload.venue || "Not specified", 120);
-  const details = normalizePromptField(payload.details || "Not specified", 420);
-  const summary = normalizePromptField(payload.summary || "Not specified", 220);
-  const contact = normalizePromptField(payload.contactNumbers || "Not specified", 120);
+  const eventTitle = normalizePromptField(payload.eventTitle || "Professional College Event", 140);
+  const date = normalizePromptField(payload.date || "Date: Not specified", 80);
+  const time = normalizePromptField(payload.time || "Time: Not specified", 80);
+  const venue = normalizePromptField(payload.venue || "Venue: Not specified", 120);
+  const details = normalizePromptField(payload.details || "Join us for an exciting event filled with learning, networking, and professional growth opportunities.", 420);
+  const summary = normalizePromptField(payload.summary || "Don't miss this opportunity to participate in this exciting event.", 220);
+  const contact = normalizePromptField(payload.contactNumbers || "Contact: Not specified", 120);
   const detailLines = toBulletLines(details, 8, 120);
-  const detailsBlock = detailLines.length ? detailLines.join("\n") : "- Not specified";
+  const detailsBlock = detailLines.length ? detailLines.join("\n") : "- Join us for an exciting professional event";
 
   return `
 Create one COMPLETE vertical college event flyer image with FINAL PRINTED TEXT included in the image.
@@ -127,30 +134,40 @@ ${themeKeywords[theme] || ""}.
 ${styleKeywords[style] || ""}.
 
 Canvas and quality:
-- Portrait 2:3 layout
+- Portrait 2:3 layout (1536x2304 pixels)
 - High contrast, clean typography, strong readability
 - Professional poster composition with clear spacing
+- Print-ready quality with sharp details
 
-Required layout order:
+Required layout order - USE EXACT TEXT PROVIDED:
 1) Top-center: ${collegeName}
 2) Immediately below: ${clubName}
-3) Main headline in very large font (once only): ${eventTitle}
-4) Mid section heading: Event Details
-5) Mid section body text (clear, readable, normal English):
+3) Main headline in very large, bold font (show only once): ${eventTitle}
+4) Mid section heading (bold): Event Details
+5) Mid section body text (clear, readable, normal English only):
 ${detailsBlock}
-6) Near bottom line: Date & Time: ${date} ${time} | Venue: ${venue}
-7) Bottom line: Summary: ${summary}
-8) Bottom line: Contact: ${contact}
+6) Near bottom: Date & Time: ${date} ${time}
+7) Next line: Venue: ${venue}
+8) Next line: Summary: ${summary}
+9) Bottom line: Contact: ${contact}
+
+STRICT TEXT REQUIREMENTS:
+- Use ONLY clear, meaningful English words provided above
+- NO placeholder text like "lorem ipsum" or "dummy text"
+- NO random characters, symbols, or gibberish
+- NO corrupted or warped typography
+- All text must be fully legible and properly spelled
+- If a line is long, wrap it across multiple lines with proper spacing
+- Never distort, mirror, or reverse letters/text
+- Keep one clean details panel in center and clean footer strip at bottom
 
 Design requirements:
-- Use only the exact event text above; do not invent, rewrite, or omit content
-- Keep all text in clear English and fully legible (no warped or broken letters)
-- If a line is long, wrap it to the next line with proper spacing; never distort characters
-- Keep one clean details panel in the center and a clean footer strip at the bottom
-- Do not include pseudo-text/code fragments in the background
-- No logos, emblems, badges, seals, or watermarks in generated artwork
-- No gibberish, no random symbols, no mirrored text
-- Print-ready poster quality
+- No logos, emblems, badges, seals, or watermarks (except what's overlaid by app)
+- Concentrate visual detail mostly on right side and lower-right corner
+- Keep center and top-middle areas readable for headline overlays
+- Use cinematic composition with premium quality
+- No people, faces, laptop screens, monitors, or documents
+- No pseudo-text, code fragments, or interface panels in background
 `.trim();
 };
 

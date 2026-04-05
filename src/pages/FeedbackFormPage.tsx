@@ -36,6 +36,9 @@ interface FeedbackForm {
 type Answers = Record<string, string | number>;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
+const BACKEND = import.meta.env.MODE === "production" ? "" : "http://localhost:8787";
+
+=======
 const StarRating = ({
   questionId,
   value,

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 import BudgetWorkspaceShell from "@/components/BudgetWorkspaceShell";
 import {
@@ -261,9 +261,15 @@ const BudgetPlannerPage = () => {
       title="Create Budget"
       subtitle="Add expenses into folders, save folders separately, and track today's spend"
       actions={
-        <button onClick={saveFolder} className="brutal-btn-outline py-3">
-          {currentDraftId ? "Update Folder" : "Save Folder"}
-        </button>
+        <div className="flex gap-2">
+          <Link to="/dashboard" className="brutal-btn-outline py-3 px-4 flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" strokeWidth={3} />
+            Back
+          </Link>
+          <button onClick={saveFolder} className="brutal-btn-outline py-3">
+            {currentDraftId ? "Update Folder" : "Save Folder"}
+          </button>
+        </div>
       }
     >
       <div className="rounded-[24px] border-2 border-foreground bg-card p-5 brutal-shadow-sm">

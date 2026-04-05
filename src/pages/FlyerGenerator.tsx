@@ -194,6 +194,17 @@ const drawWrappedText = (
   return startY + visibleLines.length * lineHeight;
 };
 
+const isValidText = (text: string): boolean => {
+  if (!text || text.trim().length === 0) return false;
+  const words = text.trim().split(/\s+/);
+  const randomCharsRegex = /^[^a-z0-9\s]*$/i;
+  return words.some((word) => !randomCharsRegex.test(word) && word.length > 1);
+};
+
+const getValidatedInput = (input: string, placeholder: string): string => {
+  return isValidText(input) ? input : placeholder;
+};
+
 const toBulletPoints = (text: string, maxItems = 10) => {
   return text
     .split(/\n|\u2022/)
@@ -504,6 +515,13 @@ const FlyerGenerator = () => {
     setApiPrompt("");
 
     try {
+      const validatedTitle = getValidatedInput(formData.eventTitle, "Professional College Event");
+      const validatedDetails = getValidatedInput(
+        formData.details,
+        "Join us for an exciting event filled with learning, networking, and professional growth opportunities."
+      );
+      const validatedSummary = getValidatedInput(formData.summary, "Don't miss this opportunity to participate in this exciting event.");
+
       const result = await api.generateFlyer({
         aiMode: "full-flyer",
         generateFullFlyer: true,
@@ -511,12 +529,12 @@ const FlyerGenerator = () => {
         clubName: formData.clubName,
         theme: formData.theme,
         style: formData.style,
-        eventTitle: formData.eventTitle,
+        eventTitle: validatedTitle,
         date: formData.date,
         time: formData.time,
         venue: formData.venue,
-        details: formData.details,
-        summary: formData.summary,
+        details: validatedDetails,
+        summary: validatedSummary,
         contactNumbers: formData.contactNumbers,
       });
 

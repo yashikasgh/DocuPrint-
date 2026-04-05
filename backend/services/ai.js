@@ -974,3 +974,78 @@ Requirements:
     recommendations: normalizeBudgetRecommendations(lines.slice(-2), eventProfile.notes),
   };
 };
+
+export const generateTimelineMilestones = async (payload) => {
+  const eventTitle = payload.eventTitle || "Event";
+  const eventDate = payload.eventDate || new Date().toISOString().split("T")[0];
+  const scale = payload.scale || "medium";
+
+  const prompt = `
+Generate a detailed timeline of milestones for an event.
+
+Event Title: ${eventTitle}
+Event Date: ${eventDate}
+Event Scale: ${scale}
+
+Make the timeline specific to the event type based on the title.
+Include the event title "${eventTitle}" in each milestone label to personalize them.
+
+Timeline Requirements:
+- Generate 6-8 meaningful milestones
+- Dates should be spread realistically across the event planning and execution window
+- Earlier dates = planning/preparation phases
+- Later dates closer to event date = execution phases
+- After event date = post-event phases
+- Owners should be realistic roles (e.g., "Faculty coordinator", "Core student team", "Operations desk")
+- Each label MUST include the event title for personalization
+- No generic milestone names like "Milestone 1" or "Step 1"
+
+Examples of personalized labels:
+- For "Web Dev Hackathon": "Registration opens for Web Dev Hackathon" instead of "Open registrations"
+- For "SIH 2024": "Submit prototype for SIH 2024" instead of "Submit prototype"
+- For "Tech Summit": "Launch marketing for Tech Summit" instead of "Marketing launch"
+
+Return structured milestones:
+- label (milestone name - MUST include event title)
+- date (ISO date format YYYY-MM-DD)
+- owner (person or team responsible)
+- status (completed, ongoing, pending)
+
+Requirements:
+1. Return ONLY valid JSON in this exact shape:
+{"milestones":[{"label":"...","date":"YYYY-MM-DD","owner":"...","status":"..."}]}
+2. Do not include any text outside the JSON object.
+3. Generate 6-8 milestones total.
+`.trim();
+
+  const llmResponse = await generateTextWithLlm(prompt);
+
+  if (!llmResponse?.text) {
+    return { milestones: [] };
+  }
+
+  try {
+    const jsonMatch = llmResponse.text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return { milestones: [] };
+    }
+
+    const parsedJson = JSON.parse(jsonMatch[0]);
+    if (Array.isArray(parsedJson.milestones) && parsedJson.milestones.length > 0) {
+      const normalizedMilestones = parsedJson.milestones.map((m) => ({
+        label: String(m.label || "").trim() || "Milestone",
+        date: String(m.date || "").trim() || eventDate,
+        owner: String(m.owner || "").trim() || "Team",
+        status: String(m.status || "").trim().toLowerCase() || "pending",
+      }));
+
+      return {
+        milestones: normalizedMilestones,
+      };
+    }
+  } catch {
+    // Fall through to empty return
+  }
+
+  return { milestones: [] };
+};

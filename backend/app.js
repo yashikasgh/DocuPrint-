@@ -209,10 +209,15 @@ app.post("/api/budget/estimate", async (req, res, next) => {
   }
 });
 
-app.post("/api/timelines/generate", (req, res) => {
-  res.json({
-    timeline: buildTimeline(req.body),
-  });
+app.post("/api/timelines/generate", async (req, res, next) => {
+  try {
+    const timeline = await buildTimeline(req.body);
+    res.json({
+      timeline,
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.post("/api/post-event/summary", (req, res) => {

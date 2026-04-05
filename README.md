@@ -147,17 +147,32 @@ YouTube link here
 ---
 
 ## 👥 Team Members
-- Name 1
-- Name 2
-- Name 3
+- Manal Ulde  
+- Amey Zode 
+- Nancy Verma 
+- Rushabh Singh  
+- Aakash  Valliyil   
+- Pranav Tahsildar    
+- Sneha Yadav  
+- Yashika Singh  
+- Aryan Yadav 
+- Yedhukrishna Vijayan 
+- Vijayraghavan Udaiyar  
 
 ---
 
 ## 📌 GitHub Contributions
-- Name 1 – Contribution
-- Name 2 – Contribution
-- Name 3 – Contribution
-
+- Manal Ulde – Report Generation Feature 
+- Amey Zode – Attendance Sheet Generation Feature
+- Nancy Verma – Flyer Generation Feature
+- Rushabh Singh – Flyer Generstion Feature
+- Aakash  Valliyil – Proposal Generation Feature   
+- Pranav Tahsildar – Proposal Generation Feature  
+- Sneha Yadav – Timeline Feature
+- Yashika Singh – Frontend, Authentication Development and Budget Feature
+- Aryan Yadav – Budget Preparation Feature
+- Yedhukrishna Vijayan – Events Integration Feature
+- Vijayraghavan Udaiyar – Deployment of Project 
 ---
 
 ## 📚 References

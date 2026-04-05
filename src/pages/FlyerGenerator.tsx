@@ -194,11 +194,11 @@ const drawWrappedText = (
   return startY + visibleLines.length * lineHeight;
 };
 
-const toBulletPoints = (text: string, maxItems = 7) => {
+const toBulletPoints = (text: string, maxItems = 10) => {
   return text
-    .split(/\n|\.|;|\u2022/)
+    .split(/\n|\u2022/)
     .map((item) => item.trim())
-    .filter((item) => item.length > 2)
+    .filter((item) => item.length > 1)
     .slice(0, maxItems);
 };
 

@@ -5,12 +5,14 @@ type AuthContextValue = {
   session: AuthSession | null;
   user: AuthUser | null;
   loading: boolean;
+  isGuest: boolean;
 };
 
 const AuthContext = createContext<AuthContextValue>({
   session: null,
   user: null,
   loading: true,
+  isGuest: false,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -80,6 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         session,
         user: session?.user ?? null,
         loading,
+        isGuest: session?.user?.id === "guest-user" || session?.user?.email === "guest@docuprint.demo",
       }}
     >
       {children}

@@ -35,7 +35,7 @@ const AboutProjectPage = () => {
     { name: "Aakash Valliyil", contribution: "Proposal Generation Feature" },
     { name: "Pranav Tahsildar", contribution: "Proposal Generation Feature" },
     { name: "Sneha Yadav", contribution: "Timeline Feature" },
-    { name: "Yashika Singh", contribution: "Frontend, Authentication & Budget Feature" },
+    { name: "Yashika Singh", contribution: "Frontend, Authentication, Backend and Deployment" },
     { name: "Aryan Yadav", contribution: "Budget Preparation Feature" },
     { name: "Yedhukrishna Vijayan", contribution: "Events Integration Feature" },
     { name: "Vijayraghavan Udaiyar", contribution: "Deployment of Project" },

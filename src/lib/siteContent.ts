@@ -36,7 +36,7 @@ export const teamMembers = [
   },
   {
     name: "Yashika Singh",
-    role: "Frontend & Authentication",
+    role: "Frontend , Authentication ,Backend and Deployment.",
     contribution: "Developed the frontend and authentication system, and also contributed to budget estimation.",
   },
   {
